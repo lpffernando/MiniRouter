@@ -2585,12 +2585,24 @@ const MODELS = [
     "dataStatus": "confirmed",
     "sourcePricing": "https://ai.google.dev/pricing"
   }
-]
+];
+
+// ═══════════════════════════ Variables & Init ══════════════════════
+let sortField = "displayName";
+let sortDir = 1;
+
+function initProviders() {
+  const providers = [...new Set(MODELS.map(m=>m.provider))].sort();
+  const sel = document.getElementById("filterProvider");
   providers.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p; opt.textContent = p.replace(" ⚑",""); sel.appendChild(opt);
   });
 }
+
+initProviders();
+document.getElementById("filterType").value = "active";
+render();
 
 function fmtPrice(v) {
   if (v === null || v === undefined) return '<span class="muted">—</span>';
@@ -2742,8 +2754,6 @@ function render() {
 }
 
 initProviders();
-let sortField = "displayName";
-let sortDir = 1;
 render();
 </script>
 </body>
