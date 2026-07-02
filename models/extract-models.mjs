@@ -1,10 +1,10 @@
 /**
- * Extract models from models-dashboard.html → seed-data.json
- * Run: node src/db/extract-models.mjs
+ * Extract models from dashboard.html → seed-data.json
+ * Run: node models/extract-models.mjs
  */
 import { readFileSync, writeFileSync } from "node:fs";
 
-const html = readFileSync("models-dashboard.html", "utf-8");
+const html = readFileSync("models/dashboard.html", "utf-8");
 const start = html.indexOf("const MODELS = [");
 const slice = html.slice(start + 17);
 
@@ -21,20 +21,17 @@ const seed = models.map((m) => ({
   id: m.id,
   provider: m.provider,
   displayName: m.displayName,
-  tier: m.tier,
+  type: m.type,
   pricing: m.pricing,
   scores: m.scores,
   multimodal: m.multimodal,
   specs: m.specs,
-  or_rank: m.rank ?? null,
-  or_weeklyVolume: m.rankChange ?? null,
-  or_weeklyChange: m.rankChange,
-  isActive: m.tier !== "deprecated",
+  isActive: m.type !== "deprecated",
   priority: m.priority || 0,
   releaseDate: m.releaseDate || "",
   notes: m.notes || "",
   verified: m.verified !== false,
 }));
 
-writeFileSync("src/db/seed-data.json", JSON.stringify(seed, null, 2));
-console.log(`Done. ${seed.length} models → src/db/seed-data.json`);
+writeFileSync("models/seed-data.json", JSON.stringify(seed, null, 2));
+console.log(`Done. ${seed.length} models → models/seed-data.json`);

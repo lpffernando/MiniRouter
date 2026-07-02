@@ -217,11 +217,11 @@ export const modelScores = sqliteTable(
     id: text("id").primaryKey(), // "deepseek/v4-flash"
     provider: text("provider").notNull(), // "DeepSeek"
     displayName: text("display_name").notNull(), // "DeepSeek V4 Flash"
-    tier: text("tier").notNull().default("candidate"), // starter | pro | promax | candidate | deprecated
+    type: text("type").notNull().default("domestic"), // domestic | international | deprecated
 
     // 价格 (元/百万 token)
-    priceInput: real("price_input").notNull(),
-    priceOutput: real("price_output").notNull(),
+    priceInput: real("price_input"),
+    priceOutput: real("price_output"),
     priceCacheHit: real("price_cache_hit"), // NULL = 不支持缓存
     peakMultiplier: real("peak_multiplier"), // 峰谷定价倍数
     peakHours: text("peak_hours"), // "工作日 9:00-12:00, 14:00-18:00"
@@ -262,7 +262,7 @@ export const modelScores = sqliteTable(
     updatedAt: text("updated_at").notNull(),
   },
   (table) => [
-    index("idx_model_tier").on(table.tier),
+    index("idx_model_type").on(table.type),
     index("idx_model_provider").on(table.provider),
     index("idx_model_active").on(table.isActive),
   ],

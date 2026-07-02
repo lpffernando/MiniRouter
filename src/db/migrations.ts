@@ -160,14 +160,17 @@ export async function runMigrations(): Promise<void> {
 
   // ─── Model Scorecard ──────────────────────────────────────────────
 
+  // Drop old table for migration: tier→type
+  db.run(sql`DROP TABLE IF EXISTS model_scores`);
+
   db.run(sql`
     CREATE TABLE IF NOT EXISTS model_scores (
       id TEXT PRIMARY KEY,
       provider TEXT NOT NULL,
       display_name TEXT NOT NULL,
-      tier TEXT NOT NULL DEFAULT 'candidate',
-      price_input REAL NOT NULL,
-      price_output REAL NOT NULL,
+      type TEXT NOT NULL DEFAULT 'domestic',
+      price_input REAL,
+      price_output REAL,
       price_cache_hit REAL,
       peak_multiplier REAL,
       peak_hours TEXT,
@@ -198,7 +201,7 @@ export async function runMigrations(): Promise<void> {
     )
   `);
 
-  db.run(sql`CREATE INDEX IF NOT EXISTS idx_model_tier ON model_scores(tier)`);
+  db.run(sql`CREATE INDEX IF NOT EXISTS idx_model_type ON model_scores(type)`);
   db.run(sql`CREATE INDEX IF NOT EXISTS idx_model_provider ON model_scores(provider)`);
   db.run(sql`CREATE INDEX IF NOT EXISTS idx_model_active ON model_scores(is_active)`);
 }
