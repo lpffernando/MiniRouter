@@ -127,9 +127,14 @@ const newModelsJson = JSON.stringify(MODELS, null, 2)
 let newHtml = before + "const MODELS = " + newModelsJson + after;
 
 // Default: show only domestic + international (hide deprecated)
+// Insert sortField/sortDir before render if not present
 newHtml = newHtml.replace(
-  'initProviders();\nrender();',
-  'initProviders();\ndocument.getElementById("filterType").value = "active";\nrender();'
+  'initProviders();\n',
+  'initProviders();\nlet sortField = "displayName";\nlet sortDir = 1;\n'
+);
+newHtml = newHtml.replace(
+  'document.getElementById("filterType").value = "active";\n',
+  ''
 );
 
 // Add "active" option to filter dropdown
