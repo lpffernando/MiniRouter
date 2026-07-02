@@ -162,6 +162,7 @@ const MODELS = [
     "id": "deepseek/v4-flash",
     "provider": "DeepSeek",
     "displayName": "DeepSeek V4 Flash",
+    type: "domestic",
     "pricing": {
       "input": 1.01,
       "output": 2.02,
@@ -186,16 +187,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-05",
-    "notes": "1M上下文，384K输出。高峰时段(9-12,14-18)价格翻倍。旧 deepseek-chat 2026-07-24 废弃。",
-    "dataStatus": "partial",
+    "notes": "1M上下文,384K输出。2026-07-24旧deepseek-chat废弃。USD:$0.14/$0.28。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://api-docs.deepseek.com/quick_start/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "deepseek/v4-pro",
     "provider": "DeepSeek",
     "displayName": "DeepSeek V4 Pro",
+    type: "domestic",
     "pricing": {
       "input": 3.13,
       "output": 6.26,
@@ -220,16 +221,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-05",
-    "notes": "支持 thinking mode。高峰价格翻倍。",
-    "dataStatus": "partial",
+    "notes": "支持thinking mode。USD:$0.435/$0.87。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://api-docs.deepseek.com/quick_start/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "deepseek/v3.2",
     "provider": "DeepSeek",
     "displayName": "DeepSeek V3.2",
+    type: "deprecated",
     "pricing": {
       "input": 2,
       "output": 8,
@@ -254,16 +255,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-Q4",
-    "notes": "⚠️ 2026-07-24 废弃。建议迁移到 V4 Flash。",
+    "notes": "2026-07-24废弃。",
     "dataStatus": "partial",
     "sourcePricing": "https://api-docs.deepseek.com/quick_start/pricing",
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "sourceBenchmark": null
   },
   {
     "id": "zhipu/glm-5.2",
-    "provider": "智谱 (Zhipu)",
+    "provider": "智谱",
     "displayName": "GLM-5.2",
+    type: "domestic",
     "pricing": {
       "input": 8,
       "output": 28,
@@ -288,16 +289,50 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-06-17",
-    "notes": "官方称代码能力对标 Claude Opus 4.6。1M上下文。2026-06-17发布。需确认官方评测数据。",
-    "dataStatus": "partial",
-    "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "notes": "代码对标Claude Opus4.6。1M上下文。火山引擎确认价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "zhipu/glm-4.7",
+    "provider": "智谱",
+    "displayName": "GLM-4.7",
+    type: "domestic",
+    "pricing": {
+      "input": 2,
+      "output": 8,
+      "cacheHit": 0.4
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 200000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "火山引擎确认价。输出≤200t时¥8,>200t时¥14分段。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
   },
   {
     "id": "zhipu/glm-4-flash",
-    "provider": "智谱 (Zhipu)",
+    "provider": "智谱",
     "displayName": "GLM-4-Flash",
+    type: "domestic",
     "pricing": {
       "input": 0,
       "output": 0,
@@ -322,16 +357,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2024-Q4",
-    "notes": "永久免费。可作为零成本兜底模型。",
-    "dataStatus": "partial",
+    "notes": "永久免费。零成本兜底。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "zhipu/glm-4-flashx",
-    "provider": "智谱 (Zhipu)",
+    "provider": "智谱",
     "displayName": "GLM-4-FlashX",
+    type: "domestic",
     "pricing": {
       "input": 0.1,
       "output": 0.1,
@@ -356,16 +391,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-H1",
-    "notes": "几乎免费，有 Function Calling。",
+    "notes": "几乎免费。有Function Calling。",
     "dataStatus": "partial",
     "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "zhipu/glm-4-air",
-    "provider": "智谱 (Zhipu)",
+    "provider": "智谱",
     "displayName": "GLM-4-Air",
+    type: "domestic",
     "pricing": {
       "input": 0.6,
       "output": 0.6,
@@ -390,16 +425,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-H1",
-    "notes": "¥0.6 同价。",
+    "notes": "¥0.6同价。",
     "dataStatus": "partial",
     "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "zhipu/glm-4-plus",
-    "provider": "智谱 (Zhipu)",
+    "provider": "智谱",
     "displayName": "GLM-4-Plus",
+    type: "domestic",
     "pricing": {
       "input": 5,
       "output": 5,
@@ -424,19 +459,53 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-Q3",
-    "notes": null,
+    "notes": "输入输出同价。",
     "dataStatus": "partial",
     "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
-    "id": "zhipu/glm-4-long",
-    "provider": "智谱 (Zhipu)",
-    "displayName": "GLM-4-Long",
+    "id": "alibaba/qwen3.7-max",
+    "provider": "阿里",
+    "displayName": "Qwen3.7-Max",
+    type: "domestic",
     "pricing": {
-      "input": 1,
-      "output": 1,
+      "input": 2.5,
+      "output": 10,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 262144,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": true,
+      "audio": false
+    },
+    "releaseDate": "2026-07",
+    "notes": "最新旗舰。待确认官方定价-使用3.6-Max价格占位。",
+    "dataStatus": "partial",
+    "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "alibaba/qwen3.7-plus",
+    "provider": "阿里",
+    "displayName": "Qwen3.7-Plus",
+    type: "domestic",
+    "pricing": {
+      "input": 1.5,
+      "output": 6,
       "cacheHit": null
     },
     "scores": {
@@ -448,60 +517,26 @@ const MODELS = [
     },
     "specs": {
       "contextWindow": 1048576,
-      "maxOutput": 8192,
-      "supportsTools": false,
-      "supportsJson": false
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
     },
     "multimodal": {
-      "vision": false,
-      "video": false,
+      "vision": true,
+      "video": true,
       "audio": false
     },
-    "releaseDate": "2025-Q2",
-    "notes": "1M上下文 ¥1/1。",
+    "releaseDate": "2026-07",
+    "notes": "最新中端。估算价格。",
     "dataStatus": "partial",
-    "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
-  },
-  {
-    "id": "zhipu/glm-z1-air",
-    "provider": "智谱 (Zhipu)",
-    "displayName": "GLM-Z1-Air",
-    "pricing": {
-      "input": 1,
-      "output": 1,
-      "cacheHit": null
-    },
-    "scores": {
-      "coding": null,
-      "reasoning": null,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 32768,
-      "supportsTools": false,
-      "supportsJson": false
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "releaseDate": "2025-Q3",
-    "notes": "推理专用轻量模型。",
-    "dataStatus": "partial",
-    "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
+    "sourceBenchmark": null
   },
   {
     "id": "alibaba/qwen3.6-max",
-    "provider": "阿里 (Alibaba)",
+    "provider": "阿里",
     "displayName": "Qwen3.6-Max",
+    type: "domestic",
     "pricing": {
       "input": 2.5,
       "output": 10,
@@ -526,50 +561,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q2",
-    "notes": "中文评测领先。⚠️ 长文本(>128K)价格跳涨到 ¥7.0/28.0。阶梯定价。",
+    "notes": "中文评测领先。>128K跳涨到¥7/28。阶梯定价。",
     "dataStatus": "partial",
     "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
-    "sourceBenchmark": null,
-    type: "domestic"
-  },
-  {
-    "id": "alibaba/qwen3.5-plus",
-    "provider": "阿里 (Alibaba)",
-    "displayName": "Qwen3.5-Plus",
-    "pricing": {
-      "input": 0.8,
-      "output": 4.8,
-      "cacheHit": null
-    },
-    "scores": {
-      "coding": null,
-      "reasoning": null,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "specs": {
-      "contextWindow": 1048576,
-      "maxOutput": 16384,
-      "supportsTools": true,
-      "supportsJson": true
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "releaseDate": "2026-Q1",
-    "notes": "1M上下文 ¥0.8 输入。阶梯定价(>128K跳涨)。",
-    "dataStatus": "partial",
-    "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "alibaba/qwen3.6-flash",
-    "provider": "阿里 (Alibaba)",
+    "provider": "阿里",
     "displayName": "Qwen3.6-Flash",
+    type: "domestic",
     "pricing": {
       "input": 0.37,
       "output": 2.94,
@@ -594,19 +595,19 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q1",
-    "notes": null,
+    "notes": "轻量版。有Tool Calling。",
     "dataStatus": "partial",
     "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
-    "id": "alibaba/qwen-turbo",
-    "provider": "阿里 (Alibaba)",
-    "displayName": "Qwen-Turbo",
+    "id": "alibaba/qwen3.5-plus",
+    "provider": "阿里",
+    "displayName": "Qwen3.5-Plus",
+    type: "domestic",
     "pricing": {
-      "input": 0.3,
-      "output": 0.6,
+      "input": 0.8,
+      "output": 4.8,
       "cacheHit": null
     },
     "scores": {
@@ -617,27 +618,27 @@ const MODELS = [
       "speed": null
     },
     "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 8192,
-      "supportsTools": false,
-      "supportsJson": false
+      "contextWindow": 1048576,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
     },
     "multimodal": {
       "vision": false,
       "video": false,
       "audio": false
     },
-    "releaseDate": "2025",
-    "notes": "经典便宜模型。",
+    "releaseDate": "2026-Q1",
+    "notes": "1M上下文¥0.8输入。阶梯定价。",
     "dataStatus": "partial",
     "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "alibaba/qwen3.5-omni-plus",
-    "provider": "阿里 (Alibaba)",
+    "provider": "阿里",
     "displayName": "Qwen3.5-Omni-Plus",
+    type: "domestic",
     "pricing": {
       "input": 1.5,
       "output": 6,
@@ -662,16 +663,696 @@ const MODELS = [
       "audio": true
     },
     "releaseDate": "2026-Q1",
-    "notes": "全模态（视觉+视频+音频）。",
+    "notes": "全模态(视觉+视频+音频+语音)。",
     "dataStatus": "partial",
     "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
+  },
+  {
+    "id": "alibaba/qwen-turbo",
+    "provider": "阿里",
+    "displayName": "Qwen-Turbo",
+    type: "domestic",
+    "pricing": {
+      "input": 0.3,
+      "output": 0.6,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 131072,
+      "maxOutput": 8192,
+      "supportsTools": false,
+      "supportsJson": false
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025",
+    "notes": "经典便宜老将。¥0.3/0.6。",
+    "dataStatus": "partial",
+    "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "alibaba/qwen3-max",
+    "provider": "阿里",
+    "displayName": "Qwen3-Max",
+    type: "deprecated",
+    "pricing": {
+      "input": 5.6,
+      "output": 28,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 262144,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025-Q3",
+    "notes": "被3.6-Max替代。",
+    "dataStatus": "partial",
+    "sourcePricing": "https://help.aliyun.com/zh/model-studio/getting-started/models",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-evolving",
+    "provider": "字节",
+    "displayName": "Seed-Evolving",
+    type: "domestic",
+    "pricing": {
+      "input": 6,
+      "output": 30,
+      "cacheHit": 1.2
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "最新实验旗舰。≤256K统一价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-2.1-pro",
+    "provider": "字节",
+    "displayName": "Seed-2.1-Pro",
+    type: "domestic",
+    "pricing": {
+      "input": 6,
+      "output": 30,
+      "cacheHit": 1.2
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": true,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "豆包最新旗舰。≤256K统一价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-2.1-turbo",
+    "provider": "字节",
+    "displayName": "Seed-2.1-Turbo",
+    type: "domestic",
+    "pricing": {
+      "input": 3,
+      "output": 15,
+      "cacheHit": 0.6
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "加速版。Batch半价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-2.0-pro",
+    "provider": "字节",
+    "displayName": "Seed-2.0-Pro",
+    type: "domestic",
+    "pricing": {
+      "input": 3.2,
+      "output": 16,
+      "cacheHit": 0.64
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 128000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": true,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "阶梯:≤32K¥3.2/16,32-128K¥4.8/24,>128K¥9.6/48。Batch半价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-2.0-lite",
+    "provider": "字节",
+    "displayName": "Seed-2.0-Lite",
+    type: "domestic",
+    "pricing": {
+      "input": 0.6,
+      "output": 3.6,
+      "cacheHit": 0.12
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 128000,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "支持音频输入¥9/M。阶梯定价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-2.0-mini",
+    "provider": "字节",
+    "displayName": "Seed-2.0-Mini",
+    type: "domestic",
+    "pricing": {
+      "input": 0.2,
+      "output": 2,
+      "cacheHit": 0.04
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 128000,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "支持音频输入¥3/M。阶梯定价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-2.0-code",
+    "provider": "字节",
+    "displayName": "Seed-2.0-Code",
+    type: "domestic",
+    "pricing": {
+      "input": 3.2,
+      "output": 16,
+      "cacheHit": 0.64
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 32768,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q2",
+    "notes": "代码专用。≤32K¥3.2/16。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-1.8",
+    "provider": "字节",
+    "displayName": "Seed-1.8",
+    type: "deprecated",
+    "pricing": {
+      "input": 0.8,
+      "output": 2,
+      "cacheHit": 0.16
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "分段:输出≤200t时¥2,>200t时¥8。Batch¥1/4。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-character",
+    "provider": "字节",
+    "displayName": "Seed-Character",
+    type: "domestic",
+    "pricing": {
+      "input": 0.8,
+      "output": 2,
+      "cacheHit": 0.16
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 128000,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "角色扮演专用。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-code",
+    "provider": "字节",
+    "displayName": "Seed-Code",
+    type: "deprecated",
+    "pricing": {
+      "input": 1.2,
+      "output": 8,
+      "cacheHit": 0.24
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025-Q4",
+    "notes": "旧代码模型。被Seed-2.0-Code替代。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-1.6",
+    "provider": "字节",
+    "displayName": "Seed-1.6",
+    type: "deprecated",
+    "pricing": {
+      "input": 0.8,
+      "output": 2,
+      "cacheHit": 0.16
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025-Q4",
+    "notes": "分段:输出≤200t时¥2,>200t时¥8。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-1.6-lite",
+    "provider": "字节",
+    "displayName": "Seed-1.6-Lite",
+    type: "deprecated",
+    "pricing": {
+      "input": 0.3,
+      "output": 0.6,
+      "cacheHit": 0.06
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025-Q4",
+    "notes": "分段:输出≤200t时¥0.6,>200t时¥2.4。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-1.6-flash",
+    "provider": "字节",
+    "displayName": "Seed-1.6-Flash",
+    type: "domestic",
+    "pricing": {
+      "input": 0.15,
+      "output": 1.5,
+      "cacheHit": 0.03
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 8192,
+      "supportsTools": false,
+      "supportsJson": false
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "🏆全场最低¥0.15。Batch¥0.075/0.75更便宜。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-1.6-vision",
+    "provider": "字节",
+    "displayName": "Seed-1.6-Vision",
+    type: "deprecated",
+    "pricing": {
+      "input": 0.8,
+      "output": 8,
+      "cacheHit": 0.16
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 256000,
+      "maxOutput": 16384,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025-Q4",
+    "notes": "旧视觉。Batch¥4/12。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/seed-translation",
+    "provider": "字节",
+    "displayName": "Seed-Translation",
+    type: "domestic",
+    "pricing": {
+      "input": 1.2,
+      "output": 3.6,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": null,
+      "maxOutput": 8192,
+      "supportsTools": false,
+      "supportsJson": false
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "翻译专用。统一价。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/doubao-1.5-pro-32k",
+    "provider": "字节",
+    "displayName": "豆包1.5-Pro-32K",
+    type: "deprecated",
+    "pricing": {
+      "input": 0.8,
+      "output": 2,
+      "cacheHit": 0.16
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 32768,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025",
+    "notes": "旧豆包旗舰。被Seed替代。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/doubao-1.5-lite-32k",
+    "provider": "字节",
+    "displayName": "豆包1.5-Lite-32K",
+    type: "deprecated",
+    "pricing": {
+      "input": 0.3,
+      "output": 0.6,
+      "cacheHit": 0.06
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 32768,
+      "maxOutput": 4096,
+      "supportsTools": false,
+      "supportsJson": false
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025",
+    "notes": "旧豆包轻量。被Seed替代。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "bytedance/doubao-1.5-vision-pro",
+    "provider": "字节",
+    "displayName": "豆包1.5-Vision-Pro",
+    type: "deprecated",
+    "pricing": {
+      "input": 3,
+      "output": 9,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 32768,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025",
+    "notes": "旧豆包视觉。被Seed替代。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://www.volcengine.com/docs/82379/1544106?lang=zh",
+    "sourceBenchmark": null
   },
   {
     "id": "xiaomi/mimo-v2.5",
-    "provider": "小米 (Xiaomi)",
+    "provider": "小米",
     "displayName": "MiMo-V2.5",
+    type: "domestic",
     "pricing": {
       "input": 1,
       "output": 2,
@@ -696,16 +1377,16 @@ const MODELS = [
       "audio": true
     },
     "releaseDate": "2025-Q4",
-    "notes": "全模态+首字极快。2026.6.30 V2系列已废弃，V2.5为当前系列。ASR/TTS 另计费。",
+    "notes": "全模态+极快。2026.6.30V2废弃。",
     "dataStatus": "confirmed",
     "sourcePricing": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "xiaomi/mimo-v2.5-pro",
-    "provider": "小米 (Xiaomi)",
+    "provider": "小米",
     "displayName": "MiMo-V2.5-Pro",
+    type: "domestic",
     "pricing": {
       "input": 3,
       "output": 6,
@@ -733,13 +1414,13 @@ const MODELS = [
     "notes": "全模态旗舰+1M上下文。",
     "dataStatus": "confirmed",
     "sourcePricing": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "xiaomi/mimo-v2-flash",
-    "provider": "小米 (Xiaomi)",
+    "provider": "小米",
     "displayName": "MiMo-V2-Flash",
+    type: "deprecated",
     "pricing": {
       "input": null,
       "output": null,
@@ -764,152 +1445,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-Q4",
-    "notes": "V2系列已废弃 2026.6.30。建议迁移到V2.5。价格已下线。",
-    "dataStatus": "deprecated",
+    "notes": "V2系列已废弃2026.6.30。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go",
-    "sourceBenchmark": null,
-    type: "deprecated"
-  },
-  {
-    "id": "bytedance/seed-2.0-pro",
-    "provider": "字节 (ByteDance)",
-    "displayName": "Seed-2.0-Pro",
-    "pricing": {
-      "input": 3.2,
-      "output": 16,
-      "cacheHit": 0.8
-    },
-    "scores": {
-      "coding": null,
-      "reasoning": null,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 16384,
-      "supportsTools": true,
-      "supportsJson": true
-    },
-    "multimodal": {
-      "vision": true,
-      "video": true,
-      "audio": false
-    },
-    "releaseDate": "2026-Q2",
-    "notes": "Batch半价。需确认官方定价页面。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://www.volcengine.com/docs/82379/1099320",
-    "sourceBenchmark": null,
-    type: "domestic"
-  },
-  {
-    "id": "bytedance/seed-2.0-mini",
-    "provider": "字节 (ByteDance)",
-    "displayName": "Seed-2.0-Mini",
-    "pricing": {
-      "input": 0.2,
-      "output": 2,
-      "cacheHit": null
-    },
-    "scores": {
-      "coding": null,
-      "reasoning": null,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 8192,
-      "supportsTools": true,
-      "supportsJson": true
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "releaseDate": "2026-Q2",
-    "notes": null,
-    "dataStatus": "unverified",
-    "sourcePricing": "https://www.volcengine.com/docs/82379/1099320",
-    "sourceBenchmark": null,
-    type: "domestic"
-  },
-  {
-    "id": "bytedance/seed-1.6-flash",
-    "provider": "字节 (ByteDance)",
-    "displayName": "Seed-1.6-Flash",
-    "pricing": {
-      "input": 0.075,
-      "output": 0.75,
-      "cacheHit": null
-    },
-    "scores": {
-      "coding": null,
-      "reasoning": null,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "specs": {
-      "contextWindow": 32768,
-      "maxOutput": 8192,
-      "supportsTools": false,
-      "supportsJson": false
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "releaseDate": "2026-Q1",
-    "notes": "全场最低价 ¥0.075。能力偏弱。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://www.volcengine.com/docs/82379/1099320",
-    "sourceBenchmark": null,
-    type: "domestic"
-  },
-  {
-    "id": "bytedance/seed-2.0-lite",
-    "provider": "字节 (ByteDance)",
-    "displayName": "Seed-2.0-Lite",
-    "pricing": {
-      "input": 0.6,
-      "output": 3.66,
-      "cacheHit": null
-    },
-    "scores": {
-      "coding": null,
-      "reasoning": null,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 8192,
-      "supportsTools": true,
-      "supportsJson": true
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "releaseDate": "2026-Q2",
-    "notes": null,
-    "dataStatus": "unverified",
-    "sourcePricing": "https://www.volcengine.com/docs/82379/1099320",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "meituan/longcat-2.0",
-    "provider": "美团 (Meituan)",
+    "provider": "美团",
     "displayName": "LongCat-2.0",
+    type: "domestic",
     "pricing": {
       "input": 2,
       "output": 8,
@@ -934,16 +1479,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-06-30",
-    "notes": "1.6T MoE，MIT开源。¥9.9/5000万Token包。SWE-bench 59.5（需确认来源）。官方定价页待确认。",
-    "dataStatus": "unverified",
-    "sourcePricing": null,
-    "sourceBenchmark": null,
-    type: "domestic"
+    "notes": "1.6T MoE MIT开源。¥9.9/5000万Token。SWE-bench59.5。",
+    "dataStatus": "partial",
+    "sourcePricing": "https://longcat.chat/platform/product",
+    "sourceBenchmark": null
   },
   {
     "id": "minimax/m3",
     "provider": "MiniMax",
     "displayName": "MiniMax M3",
+    type: "domestic",
     "pricing": {
       "input": 2.1,
       "output": 8.4,
@@ -957,7 +1502,7 @@ const MODELS = [
       "speed": null
     },
     "specs": {
-      "contextWindow": 197000,
+      "contextWindow": 512000,
       "maxOutput": 16384,
       "supportsTools": true,
       "supportsJson": true
@@ -968,16 +1513,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q1",
-    "notes": "缓存机制好。1M上下文（?）。需确认官方定价。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://platform.minimaxi.com/document/Price",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "notes": "标准≤512K¥2.1/8.4,>512K翻倍。优先服务×1.5。永久五折。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://platform.minimaxi.com/docs/guides/pricing-paygo",
+    "sourceBenchmark": null
   },
   {
     "id": "minimax/m2.7",
     "provider": "MiniMax",
     "displayName": "MiniMax M2.7",
+    type: "deprecated",
     "pricing": {
       "input": 2.1,
       "output": 8.4,
@@ -1002,16 +1547,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-Q4",
-    "notes": "M3前代。建议迁移到M3。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://platform.minimaxi.com/document/Price",
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "notes": "有highspeed×2价。缓存写入¥2.625/M。被M3替代。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://platform.minimaxi.com/docs/guides/pricing-paygo",
+    "sourceBenchmark": null
   },
   {
     "id": "tencent/hy3-preview",
-    "provider": "腾讯 (Tencent)",
-    "displayName": "混元 Hy3 Preview",
+    "provider": "腾讯",
+    "displayName": "混元Hy3 Preview",
+    type: "domestic",
     "pricing": {
       "input": null,
       "output": null,
@@ -1036,16 +1581,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-06",
-    "notes": "预览版，价格待公布。",
+    "notes": "预览版。价格待公布。",
     "dataStatus": "unverified",
     "sourcePricing": null,
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "sourceBenchmark": null
   },
   {
     "id": "tencent/hunyuan-turbos",
-    "provider": "腾讯 (Tencent)",
-    "displayName": "混元 TurboS",
+    "provider": "腾讯",
+    "displayName": "混元TurboS",
+    type: "domestic",
     "pricing": {
       "input": 0.8,
       "output": 2,
@@ -1070,19 +1615,19 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-Q4",
-    "notes": null,
-    "dataStatus": "partial",
+    "notes": "¥0.8/2.0极低。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://cloud.tencent.com/document/product/1729/97731",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
-    "id": "tencent/hy2.0-think",
-    "provider": "腾讯 (Tencent)",
-    "displayName": "混元 HY2.0 Think",
+    "id": "tencent/hunyuan-a13b",
+    "provider": "腾讯",
+    "displayName": "混元A13B",
+    type: "domestic",
     "pricing": {
-      "input": 4,
-      "output": 16,
+      "input": 0.5,
+      "output": 2,
       "cacheHit": null
     },
     "scores": {
@@ -1094,26 +1639,26 @@ const MODELS = [
     },
     "specs": {
       "contextWindow": 131072,
-      "maxOutput": 16384,
-      "supportsTools": false,
-      "supportsJson": false
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
     },
     "multimodal": {
       "vision": false,
       "video": false,
       "audio": false
     },
-    "releaseDate": "2026-Q1",
-    "notes": "推理专用。",
-    "dataStatus": "partial",
+    "releaseDate": "2025-Q4",
+    "notes": "¥0.5极低输入。新用户送100万token。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://cloud.tencent.com/document/product/1729/97731",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "tencent/hunyuan-lite",
-    "provider": "腾讯 (Tencent)",
-    "displayName": "混元 Lite",
+    "provider": "腾讯",
+    "displayName": "混元Lite",
+    type: "domestic",
     "pricing": {
       "input": 0,
       "output": 0,
@@ -1139,15 +1684,49 @@ const MODELS = [
     },
     "releaseDate": "2025",
     "notes": "永久免费。",
-    "dataStatus": "partial",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://cloud.tencent.com/document/product/1729/97731",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
+  },
+  {
+    "id": "tencent/hy2.0-think",
+    "provider": "腾讯",
+    "displayName": "混元HY2.0 Think",
+    type: "domestic",
+    "pricing": {
+      "input": 4,
+      "output": 16,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 131072,
+      "maxOutput": 16384,
+      "supportsTools": false,
+      "supportsJson": false
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "推理专用。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://cloud.tencent.com/document/product/1729/97731",
+    "sourceBenchmark": null
   },
   {
     "id": "moonshot/kimi-k2.7-code",
-    "provider": "月之暗面 (Moonshot)",
+    "provider": "月之暗面",
     "displayName": "Kimi K2.7 Code",
+    type: "domestic",
     "pricing": {
       "input": 6.5,
       "output": 27,
@@ -1172,16 +1751,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-06",
-    "notes": "输出¥27极贵。缓存¥1.3。",
-    "dataStatus": "partial",
+    "notes": "最强Coding。缓存¥1.3。输出¥27极贵。有HS×2价。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://platform.kimi.com/docs/pricing/chat-k27-code",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "moonshot/kimi-k2.7-code-highspeed",
-    "provider": "月之暗面 (Moonshot)",
+    "provider": "月之暗面",
     "displayName": "Kimi K2.7 Code HS",
+    type: "domestic",
     "pricing": {
       "input": 13,
       "output": 54,
@@ -1206,16 +1785,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-06",
-    "notes": "高速版 180-260 TPS。价格翻倍。",
-    "dataStatus": "partial",
+    "notes": "高速版180-260TPS。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://platform.kimi.com/docs/pricing/chat-k27-code",
-    "sourceBenchmark": null,
-    type: "domestic"
+    "sourceBenchmark": null
   },
   {
     "id": "moonshot/kimi-k2.6",
-    "provider": "月之暗面 (Moonshot)",
+    "provider": "月之暗面",
     "displayName": "Kimi K2.6",
+    type: "deprecated",
     "pricing": {
       "input": 6.5,
       "output": 27,
@@ -1240,20 +1819,20 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q1",
-    "notes": "被K2.7替代。",
-    "dataStatus": "partial",
+    "notes": "被K2.7 Code替代。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://platform.kimi.com/docs/pricing/chat-k26",
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "sourceBenchmark": null
   },
   {
     "id": "stepfun/step-3.7-flash",
-    "provider": "阶跃星辰 (StepFun)",
+    "provider": "阶跃星辰",
     "displayName": "Step 3.7 Flash",
+    type: "domestic",
     "pricing": {
-      "input": null,
-      "output": null,
-      "cacheHit": null
+      "input": 1.35,
+      "output": 8.1,
+      "cacheHit": 0.27
     },
     "scores": {
       "coding": null,
@@ -1274,16 +1853,84 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q2",
-    "notes": "需确认官方定价和评测。",
-    "dataStatus": "unverified",
-    "sourcePricing": null,
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "notes": "多模态推理。缓存¥0.27。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://platform.stepfun.com/docs/zh/guides/pricing/details",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "stepfun/step-3.5-flash",
+    "provider": "阶跃星辰",
+    "displayName": "Step 3.5 Flash",
+    type: "domestic",
+    "pricing": {
+      "input": 0.7,
+      "output": 2.1,
+      "cacheHit": 0.14
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 131072,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2026-Q1",
+    "notes": "推理模型。¥0.7极低。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://platform.stepfun.com/docs/zh/guides/pricing/details",
+    "sourceBenchmark": null
+  },
+  {
+    "id": "stepfun/step-1o-turbo-vision",
+    "provider": "阶跃星辰",
+    "displayName": "Step1o Turbo Vision",
+    type: "domestic",
+    "pricing": {
+      "input": 2.5,
+      "output": 8,
+      "cacheHit": 0.5
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "specs": {
+      "contextWindow": 131072,
+      "maxOutput": 8192,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "multimodal": {
+      "vision": true,
+      "video": false,
+      "audio": false
+    },
+    "releaseDate": "2025-Q4",
+    "notes": "视觉模型。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://platform.stepfun.com/docs/zh/guides/pricing/details",
+    "sourceBenchmark": null
   },
   {
     "id": "stepfun/step-2",
-    "provider": "阶跃星辰 (StepFun)",
+    "provider": "阶跃星辰",
     "displayName": "Step-2",
+    type: "domestic",
     "pricing": {
       "input": null,
       "output": null,
@@ -1308,19 +1955,19 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2025-Q4",
-    "notes": "多模态旗舰。需确认价格和能力。",
+    "notes": "多模态旗舰。价格待确认。",
     "dataStatus": "unverified",
-    "sourcePricing": null,
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "sourcePricing": "https://platform.stepfun.com/docs/zh/guides/pricing/details",
+    "sourceBenchmark": null
   },
   {
     "id": "baidu/ernie-5.0",
-    "provider": "百度 (Baidu)",
+    "provider": "百度",
     "displayName": "ERNIE-5.0",
+    type: "domestic",
     "pricing": {
-      "input": 8,
-      "output": 32,
+      "input": 6,
+      "output": 24,
       "cacheHit": null
     },
     "scores": {
@@ -1331,7 +1978,7 @@ const MODELS = [
       "speed": null
     },
     "specs": {
-      "contextWindow": 131072,
+      "contextWindow": 128000,
       "maxOutput": 16384,
       "supportsTools": true,
       "supportsJson": false
@@ -1342,20 +1989,20 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q1",
-    "notes": "百度旗舰。API兼容需适配器。需确认官方定价。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://cloud.baidu.com/product-s/qianfan_home",
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "notes": "百度旗舰。≤32K¥6/24,32-128K¥10/40。需适配器。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": null
   },
   {
     "id": "baidu/ernie-4.5-turbo",
-    "provider": "百度 (Baidu)",
+    "provider": "百度",
     "displayName": "ERNIE 4.5 Turbo",
+    type: "domestic",
     "pricing": {
       "input": 0.8,
       "output": 3.2,
-      "cacheHit": null
+      "cacheHit": 0.2
     },
     "scores": {
       "coding": null,
@@ -1376,16 +2023,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q1",
-    "notes": "¥0.8便宜。需适配器。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://cloud.baidu.com/product-s/qianfan_home",
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "notes": "¥0.8/3.2便宜。缓存¥0.2。Batch¥0.32/1.28。需适配器。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": null
   },
   {
     "id": "baidu/ernie-x1.1",
-    "provider": "百度 (Baidu)",
-    "displayName": "ERNIE X1.1 Preview",
+    "provider": "百度",
+    "displayName": "ERNIE X1.1",
+    type: "domestic",
     "pricing": {
       "input": 1,
       "output": 4,
@@ -1410,16 +2057,16 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-Q1",
-    "notes": "推理中型。",
-    "dataStatus": "unverified",
-    "sourcePricing": "https://cloud.baidu.com/product-s/qianfan_home",
-    "sourceBenchmark": null,
-    type: "deprecated"
+    "notes": "推理模型。¥1/4。",
+    "dataStatus": "confirmed",
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": null
   },
   {
     "id": "openai/gpt-5.5",
     "provider": "OpenAI ⚑",
     "displayName": "GPT-5.5",
+    type: "international",
     "pricing": {
       "input": 36,
       "output": 216,
@@ -1445,15 +2092,15 @@ const MODELS = [
     },
     "releaseDate": "2026-Q1",
     "notes": "仅供价格对标。",
-    "dataStatus": "partial",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://openai.com/api/pricing/",
-    "sourceBenchmark": null,
-    type: "international"
+    "sourceBenchmark": null
   },
   {
     "id": "anthropic/claude-opus-4.8",
     "provider": "Anthropic ⚑",
     "displayName": "Claude Opus 4.8",
+    type: "international",
     "pricing": {
       "input": 36,
       "output": 180,
@@ -1479,15 +2126,15 @@ const MODELS = [
     },
     "releaseDate": "2026-06",
     "notes": "仅供价格对标。",
-    "dataStatus": "partial",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://www.anthropic.com/pricing",
-    "sourceBenchmark": null,
-    type: "international"
+    "sourceBenchmark": null
   },
   {
     "id": "google/gemini-3-flash",
     "provider": "Google ⚑",
     "displayName": "Gemini 3 Flash",
+    type: "international",
     "pricing": {
       "input": 7.2,
       "output": 28.8,
@@ -1513,13 +2160,11 @@ const MODELS = [
     },
     "releaseDate": "2026-Q2",
     "notes": "仅供价格对标。",
-    "dataStatus": "partial",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://ai.google.dev/pricing",
-    "sourceBenchmark": null,
-    type: "international"
+    "sourceBenchmark": null
   }
 ]
-;
 
 // ═══════════════════════════════════════════════════════════════════
 // 渲染逻辑
