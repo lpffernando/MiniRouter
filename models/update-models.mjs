@@ -97,7 +97,7 @@ const MODELS = [
   m("xiaomi/mimo-v2.5","小米","MiMo-V2.5","domestic",1.0,2.0,0.02,1048576,16384,true,true,true,true,true,"2025-Q4","全模态+极快。2026.6.30V2废弃。","confirmed","https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go"),
   m("xiaomi/mimo-v2.5-pro","小米","MiMo-V2.5-Pro","domestic",3.0,6.0,0.025,1048576,32768,true,true,true,true,true,"2026-Q1","全模态旗舰+1M上下文。","confirmed","https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go"),
   m("xiaomi/mimo-v2-flash","小米","MiMo-V2-Flash","deprecated",null,null,null,131072,8192,true,true,true,false,false,"2025-Q4","V2系列已废弃2026.6.30。","confirmed","https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go"),
-  m("meituan/longcat-2.0","美团","LongCat-2.0","domestic",2.0,8.0,0.04,1048576,131072,true,true,false,false,false,"2026-06-30","1.6T MoE MIT开源。¥9.9/5000万Token。SWE-bench59.5。","partial","https://longcat.chat/platform/product"),
+  m("meituan/longcat-2.0","美团","LongCat-2.0","domestic",2.0,8.0,0.04,1048576,131072,true,true,false,false,false,"2026-06-30","1.6T MoE MIT开源。折扣价¥2/8,缓存¥0.04。原价¥5/20。","confirmed","https://longcat.chat/platform/product"),
   m("minimax/m3","MiniMax","MiniMax M3","domestic",2.10,8.40,0.42,512000,16384,true,true,true,false,false,"2026-Q1","标准≤512K¥2.1/8.4,>512K翻倍。优先服务×1.5。永久五折。","confirmed","https://platform.minimaxi.com/docs/guides/pricing-paygo"),
   m("minimax/m2.7","MiniMax","MiniMax M2.7","deprecated",2.10,8.40,0.42,197000,8192,true,true,true,false,false,"2025-Q4","有highspeed×2价。缓存写入¥2.625/M。被M3替代。","confirmed","https://platform.minimaxi.com/docs/guides/pricing-paygo"),
   m("tencent/hy3-preview","腾讯","混元Hy3 Preview","domestic",null,null,null,131072,16384,true,true,false,false,false,"2026-06","预览版。价格待公布。","unverified",null),
@@ -122,9 +122,28 @@ const MODELS = [
 
 // Build new HTML
 const newModelsJson = JSON.stringify(MODELS, null, 2)
-  .replace(/"type":/g, "type:"); // unquoted type key for valid JS
+  .replace(/"type":/g, "type:");
 
-const newHtml = before + "const MODELS = " + newModelsJson + after;
+let newHtml = before + "const MODELS = " + newModelsJson + after;
+
+// Default: show only domestic + international (hide deprecated)
+newHtml = newHtml.replace(
+  'initProviders();\nrender();',
+  'initProviders();\ndocument.getElementById("filterType").value = "active";\nrender();'
+);
+
+// Add "active" option to filter dropdown
+newHtml = newHtml.replace(
+  '<option value="">全部类型</option>',
+  '<option value="">全部</option>\n    <option value="active" selected>活跃(默认)</option>'
+);
+
+// Handle "active" filter in render
+newHtml = newHtml.replace(
+  'if (filterType && m.type !== filterType) return false;',
+  'if (filterType === "active" && m.type === "deprecated") return false;\n    else if (filterType && filterType !== "active" && m.type !== filterType) return false;'
+);
+
 writeFileSync("models/dashboard.html", newHtml);
 
 console.log(`Updated: ${MODELS.length} models (was ${idCount})`);

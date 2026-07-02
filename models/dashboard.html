@@ -97,7 +97,8 @@
 <div class="filters">
   <input type="text" id="search" placeholder="🔍 搜索模型名、厂商…" oninput="render()">
   <select id="filterType" onchange="render()">
-    <option value="">全部类型</option>
+    <option value="">全部</option>
+    <option value="active" selected>活跃(默认)</option>
     <option value="domestic">🟢 国内</option>
     <option value="international">🔵 国际</option>
     <option value="deprecated">🔴 淘汰</option>
@@ -2091,8 +2092,8 @@ const MODELS = [
       "audio": false
     },
     "releaseDate": "2026-06-30",
-    "notes": "1.6T MoE MIT开源。¥9.9/5000万Token。SWE-bench59.5。",
-    "dataStatus": "partial",
+    "notes": "1.6T MoE MIT开源。折扣价¥2/8,缓存¥0.04。原价¥5/20。",
+    "dataStatus": "confirmed",
     "sourcePricing": "https://longcat.chat/platform/product",
     "sourceBenchmark": null
   },
@@ -2777,9 +2778,6 @@ const MODELS = [
     "sourceBenchmark": null
   }
 ]
-
-// ═══════════════════════════ Variables ═══════════════════════════
-let sortField = "displayName";
 let sortDir = 1;
 
 function initProviders() {
@@ -2887,7 +2885,8 @@ function render() {
       const hay = (m.displayName + " " + m.provider + " " + m.id + " " + (m.notes||"")).toLowerCase();
       if (!hay.includes(search)) return false;
     }
-    if (filterType && m.type !== filterType) return false;
+    if (filterType === "active" && m.type === "deprecated") return false;
+    else if (filterType && filterType !== "active" && m.type !== filterType) return false;
     if (filterProvider && m.provider !== filterProvider) return false;
     if (filterVerified && m.dataStatus !== filterVerified) return false;
     return true;
@@ -2940,6 +2939,7 @@ function render() {
 }
 
 initProviders();
+document.getElementById("filterType").value = "active";
 render();
 </script>
 </body>
