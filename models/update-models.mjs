@@ -126,16 +126,8 @@ const newModelsJson = JSON.stringify(MODELS, null, 2)
 
 let newHtml = before + "const MODELS = " + newModelsJson + after;
 
-// Default: show only domestic + international (hide deprecated)
-// Insert sortField/sortDir before render if not present
-newHtml = newHtml.replace(
-  'initProviders();\n',
-  'initProviders();\nlet sortField = "displayName";\nlet sortDir = 1;\n'
-);
-newHtml = newHtml.replace(
-  'document.getElementById("filterType").value = "active";\n',
-  ''
-);
+// No more injecting! The HTML already has clean initProviders+sortField+render
+// after the MODELS array (we fixed that above in the template section).
 
 // Add "active" option to filter dropdown
 newHtml = newHtml.replace(

@@ -2604,6 +2604,11 @@ const MODELS = [
     "sourcePricing": "https://ai.google.dev/pricing"
   }
 ]
+
+// ═══ Functions ═══
+function initProviders() {
+  const providers = [...new Set(MODELS.map(m=>m.provider))].sort();
+  const sel = document.getElementById("filterProvider");
   providers.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p; opt.textContent = p.replace(" ⚑",""); sel.appendChild(opt);
@@ -2613,6 +2618,7 @@ const MODELS = [
 initProviders();
 let sortField = "displayName";
 let sortDir = 1;
+document.getElementById("filterType").value = "active";
 render();
 
 function fmtPrice(v) {
