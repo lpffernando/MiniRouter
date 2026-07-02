@@ -10,8 +10,8 @@
       "cacheHit": 0.02
     },
     "scores": {
-      "coding": 91.6,
-      "reasoning": 88.1,
+      "coding": 50.1,
+      "reasoning": 35.7,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -44,8 +44,8 @@
       "cacheHit": 0.026
     },
     "scores": {
-      "coding": 93.5,
-      "reasoning": 90.1,
+      "coding": 54.7,
+      "reasoning": 41.1,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -64,7 +64,7 @@
     "isActive": true,
     "priority": 0,
     "releaseDate": "2026-05",
-    "notes": "支持thinking mode。LiveCodeBench 93.5(全球#1),GPQA 90.1,SWE-bench 80.6。",
+    "notes": "LiveCodeBench93.5(全球#1),GPQA90.1,SWE-bench80.6。",
     "verified": true
   },
   {
@@ -112,8 +112,8 @@
       "cacheHit": 2
     },
     "scores": {
-      "coding": 95,
-      "reasoning": 90,
+      "coding": 59.1,
+      "reasoning": 48.8,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -146,8 +146,8 @@
       "cacheHit": 1.3
     },
     "scores": {
-      "coding": 77.2,
-      "reasoning": 86.2,
+      "coding": 50.3,
+      "reasoning": 41.1,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -212,8 +212,8 @@
       "cacheHit": 1
     },
     "scores": {
-      "coding": 68.9,
-      "reasoning": 86,
+      "coding": 49.3,
+      "reasoning": 34.5,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -598,8 +598,8 @@
       "cacheHit": null
     },
     "scores": {
-      "coding": 91.6,
-      "reasoning": 92.4,
+      "coding": 57.5,
+      "reasoning": 45.6,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -632,8 +632,8 @@
       "cacheHit": null
     },
     "scores": {
-      "coding": 89.6,
-      "reasoning": 90.3,
+      "coding": 53.1,
+      "reasoning": 40.4,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -1244,8 +1244,8 @@
       "cacheHit": 0.64
     },
     "scores": {
-      "coding": 87.8,
-      "reasoning": 88.9,
+      "coding": 52.2,
+      "reasoning": 31.6,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -1858,8 +1858,8 @@
       "cacheHit": 0.42
     },
     "scores": {
-      "coding": 74,
-      "reasoning": 92.9,
+      "coding": 52.8,
+      "reasoning": 44.4,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -2088,8 +2088,8 @@
       "cacheHit": 1.3
     },
     "scores": {
-      "coding": null,
-      "reasoning": null,
+      "coding": 44.8,
+      "reasoning": 39.2,
       "chinese": null,
       "creative": null,
       "speed": null
