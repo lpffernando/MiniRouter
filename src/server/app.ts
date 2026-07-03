@@ -19,8 +19,11 @@ import { resolve } from "node:path";
 import { authMiddleware } from "./middleware/auth.js";
 import { rateLimitMiddleware } from "./middleware/ratelimit.js";
 import { chatCompletions } from "./routes/chat.js";
+import { anthropicMessages } from "./routes/anthropic-messages.js";
+import { health, readiness } from "./routes/health.js";
 import { listModels } from "./routes/models.js";
 import { getModelScore, listModelScores, updateModelScore } from "./routes/models-api.js";
+import { debugRoute } from "./routes/debug-route.js";
 import {
   register,
   adminListUsers,
@@ -30,6 +33,7 @@ import {
   adminUsage,
   adminStats,
 } from "./routes/admin.js";
+import { getUsageLogs, getUserUsageSummary } from "./routes/usage-logs.js";
 
 function serveModelsDashboard(c: Context) {
   const html = readFileSync(resolve(process.cwd(), "models/dashboard.html"), "utf8");
@@ -46,11 +50,8 @@ export function createApp(): Hono {
   // ─── Public routes (no auth required) ───────────────────────────
 
   // Health check
-  app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
-  app.get("/health/ready", (c) => {
-    // In Phase 2, check DB connectivity
-    return c.json({ status: "ready", timestamp: new Date().toISOString() });
-  });
+  app.get("/health", health);
+  app.get("/health/ready", readiness);
 
   // User registration (public in Phase 1, can be invite-only later)
   app.post("/admin/register", register);
@@ -58,6 +59,7 @@ export function createApp(): Hono {
   app.get("/api/models/:id", getModelScore);
   app.get("/models/dashboard", serveModelsDashboard);
   app.get("/models/dashboard.html", serveModelsDashboard);
+  app.post("/debug/route", debugRoute);
 
   // ─── Authenticated routes ────────────────────────────────────────
 
@@ -67,6 +69,7 @@ export function createApp(): Hono {
 
   // OpenAI-compatible endpoints
   api.post("/v1/chat/completions", chatCompletions);
+  api.post("/v1/messages", anthropicMessages);
   api.get("/v1/models", listModels);
 
   // Admin endpoints
@@ -77,6 +80,10 @@ export function createApp(): Hono {
   api.get("/admin/usage", adminUsage);
   api.get("/admin/stats", adminStats);
   api.put("/api/models/:id", updateModelScore);
+
+  // Usage log query endpoints
+  api.get("/api/usage/logs", getUsageLogs);
+  api.get("/api/usage/summary", getUserUsageSummary);
 
   app.route("/", api);
 

@@ -1,163 +1,293 @@
 /**
- * POST /v1/chat/completions — OpenAI-compatible chat completions route
+ * OpenAI-compatible chat completions route.
  *
- * This is the main routing entry point. It delegates to the existing
- * ClawRouter proxy logic, wrapped with multi-user auth + rate limiting.
- * In Phase 1, it starts the existing proxy and forwards requests.
- * In Phase 2, the routing logic will be refactored into standalone functions.
+ * MiniRouter preserves the incoming API standard. This route only serves
+ * OpenAI Chat-compatible requests and forwards them to OpenAI-compatible
+ * upstream providers. Native Anthropic requests use /v1/messages.
  */
 
 import type { Context } from "hono";
 import type { AuthResult } from "../../auth/types.js";
 import { route, DEFAULT_ROUTING_CONFIG } from "../../router/index.js";
-import {
-  BLOCKRUN_MODELS,
-  resolveModelAlias,
-  getModelContextWindow,
-} from "../../models.js";
+import { buildModelPricing } from "../../router/utils.js";
 import { logUsage } from "../../db/queries/usage.js";
 import { randomUUID } from "node:crypto";
+import { normalizeOpenAIChatRequest } from "../../protocols/openai-chat.js";
+import { extractRoutingFeatures } from "../../routing/features/extractor.js";
+import { getSlotForRoutingModel, loadModelSlotsFromEnv, pickSlotForFeatures } from "../../providers/env.js";
+import type { ModelSlot } from "../../providers/types.js";
+import { executeOpenAICompatibleChat } from "../../providers/openai-compatible.js";
+import { optimizeWithHeadroom } from "../../context/headroom.js";
+
+type EnvLike = Record<string, string | undefined>;
+type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
+
+function getPromptParts(body: any): { prompt: string; systemPrompt?: string } {
+  const request = normalizeOpenAIChatRequest(body);
+  const prompt = request.messages
+    .filter((message) => message.role !== "system")
+    .flatMap((message) => message.content)
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("\n");
+  const systemPrompt = request.messages
+    .filter((message) => message.role === "system")
+    .flatMap((message) => message.content)
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("\n");
+  return { prompt, systemPrompt: systemPrompt || undefined };
+}
+
+export function slotCanServeOpenAIChat(slot: ModelSlot): boolean {
+  return slot.provider !== "anthropic";
+}
+
+export function selectConfiguredSlotForChat(
+  body: any,
+  env: EnvLike = process.env,
+): { slot: ModelSlot; tier: RoutedTier } | null {
+  const slots = loadModelSlotsFromEnv(env);
+  if (Object.keys(slots).length === 0) return null;
+
+  const request = normalizeOpenAIChatRequest(body);
+  const features = extractRoutingFeatures(request);
+  const { prompt, systemPrompt } = getPromptParts(body);
+  const decision = route(prompt, systemPrompt, request.maxOutputTokens, {
+    config: DEFAULT_ROUTING_CONFIG,
+    modelPricing: buildModelPricing(),
+    routingProfile: undefined,
+    hasTools: features.requirements.toolCalling,
+  });
+  const explicitSlot = typeof body.model === "string" ? getSlotForRoutingModel(slots, body.model) : undefined;
+
+  if (explicitSlot) {
+    if (features.requirements.vision && !explicitSlot.supportsVision) {
+      throw new Error("Explicit slot does not support vision");
+    }
+    if (features.requirements.toolCalling && !explicitSlot.supportsTools) {
+      throw new Error("Explicit slot does not support tools");
+    }
+    return {
+      tier: decision.tier,
+      slot: explicitSlot,
+    };
+  }
+
+  return {
+    tier: decision.tier,
+    slot: pickSlotForFeatures(slots, {
+      tier: decision.tier,
+      requirements: {
+        vision: features.requirements.vision,
+        toolCalling: features.requirements.toolCalling,
+        agentic: features.requirements.agentic,
+      },
+    }),
+  };
+}
+
+async function executeConfiguredSlot(body: any, slot: ModelSlot): Promise<Response> {
+  if (!slotCanServeOpenAIChat(slot)) {
+    return Response.json(
+      {
+        error: {
+          message:
+            "This slot is configured for native Anthropic Messages. Use POST /v1/messages instead of /v1/chat/completions.",
+          type: "protocol_mismatch",
+        },
+      },
+      { status: 400 },
+    );
+  }
+
+  const optimized = await optimizeWithHeadroom({
+    protocol: "openai-chat",
+    body,
+    slot,
+  });
+  return executeOpenAICompatibleChat(optimized.body, slot);
+}
+
+export function createMissingSlotResponse(): Response {
+  return Response.json(
+    {
+      error: {
+        message:
+          "MiniRouter has no configured model slots. Configure MINIROUTER_BALANCED_BASE_URL, MINIROUTER_STRONG_BASE_URL, or MINIROUTER_VISION_BASE_URL before using routed models.",
+        type: "configuration_error",
+      },
+    },
+    { status: 503 },
+  );
+}
+
+export function createUnsatisfiedSlotResponse(_error: unknown): Response {
+  return Response.json(
+    {
+      error: {
+        message:
+          "No configured MiniRouter model slot can satisfy this request. Check VISION support for image inputs and SUPPORTS_TOOLS for Agent/tool calls.",
+        type: "configuration_error",
+      },
+    },
+    { status: 503 },
+  );
+}
+
+export function createProviderErrorResponse(_error: unknown): Response {
+  return Response.json(
+    {
+      error: {
+        message:
+          "Upstream provider request failed. Check the selected slot BASE_URL, API_KEY, and network access.",
+        type: "provider_error",
+      },
+    },
+    { status: 502 },
+  );
+}
+
+export function toMutableUpstreamResponse(upstream: Response): Response {
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: new Headers(upstream.headers),
+  });
+}
 
 /**
- * POST /v1/chat/completions
- *
- * Accepts standard OpenAI chat completion requests.
- * When model is "minirouter/auto|eco|premium", invokes the routing engine.
- * When model is an explicit model ID, forwards directly.
- *
- * In Phase 1, this is a thin wrapper that:
- * 1. Parses the request body
- * 2. Runs routing classification (if auto/eco/premium)
- * 3. Logs the usage
- * 4. Delegates to the existing proxy for actual LLM calls
+ * Parse OpenAI-compatible usage from a non-streaming upstream response.
+ * Returns { promptTokens, completionTokens, cacheReadTokens } or undefined
+ * if parsing fails.
  */
+export async function parseOpenAIUsage(upstream: Response): Promise<{ promptTokens: number; completionTokens: number; cacheReadTokens: number } | undefined> {
+  try {
+    const cloned = upstream.clone();
+    const text = await cloned.text();
+    const json = JSON.parse(text);
+    const usage = json?.usage;
+    if (!usage) return undefined;
+    return {
+      promptTokens: Number(usage.prompt_tokens ?? 0),
+      completionTokens: Number(usage.completion_tokens ?? 0),
+      cacheReadTokens: Number(usage.cache_read_tokens ?? usage.prompt_tokens_details?.caching?.credits ?? 0),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Parse Anthropic usage from a non-streaming upstream response.
+ */
+export async function parseAnthropicUsage(upstream: Response): Promise<{ promptTokens: number; completionTokens: number; cacheReadTokens: number } | undefined> {
+  try {
+    const cloned = upstream.clone();
+    const text = await cloned.text();
+    const json = JSON.parse(text);
+    const usage = json?.usage;
+    if (!usage) return undefined;
+    return {
+      promptTokens: Number(usage.input_tokens ?? usage.prompt_tokens ?? 0),
+      completionTokens: Number(usage.output_tokens ?? usage.completion_tokens ?? 0),
+      cacheReadTokens: Number(usage.cache_creation_input_tokens ?? usage.cache_read_input_tokens ?? 0),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function isRoutingModel(model: string): boolean {
+  const normalized = model.toLowerCase();
+  return (
+    normalized === "minirouter/auto" ||
+    normalized === "minirouter/eco" ||
+    normalized === "minirouter/premium" ||
+    normalized === "auto" ||
+    normalized === "eco" ||
+    normalized === "premium" ||
+    /^minirouter\/slot\/(fast|balanced|strong|vision)$/.test(normalized)
+  );
+}
+
+function routingProfile(model: string, headerProfile: string | undefined): "eco" | "auto" | "premium" | undefined {
+  const normalized = model.toLowerCase();
+  if (normalized === "minirouter/eco" || normalized === "eco") return "eco";
+  if (normalized === "minirouter/premium" || normalized === "premium") return "premium";
+  if (headerProfile === "eco" || headerProfile === "premium") return headerProfile;
+  return undefined;
+}
+
 export async function chatCompletions(c: Context) {
   const auth = c.get("auth") as AuthResult;
   const body = await c.req.json();
   const requestId = randomUUID();
-
-  // Parse routing profile from model or header
   const modelParam: string = body.model ?? "minirouter/auto";
-  const headerProfile = c.req.header("x-routing-profile");
 
-  // Detect routing profile
-  let routingProfile: "eco" | "auto" | "premium" | undefined;
-  const normalizedModel = modelParam.toLowerCase();
-
-  if (normalizedModel === "minirouter/eco" || normalizedModel === "eco") {
-    routingProfile = "eco";
-  } else if (normalizedModel === "minirouter/premium" || normalizedModel === "premium") {
-    routingProfile = "premium";
-  } else if (headerProfile === "eco" || headerProfile === "premium") {
-    routingProfile = headerProfile;
-  }
-
-  const isRoutingModel =
-    normalizedModel === "minirouter/auto" ||
-    normalizedModel === "minirouter/eco" ||
-    normalizedModel === "minirouter/premium" ||
-    normalizedModel === "auto" ||
-    normalizedModel === "eco" ||
-    normalizedModel === "premium";
-
-  // Build prompt from messages
-  const messages: Array<{ role: string; content: string }> = body.messages ?? [];
-  const systemMsg = messages.find((m) => m.role === "system");
-  const userMsg = messages.find((m) => m.role === "user");
-  const prompt = userMsg?.content ?? "";
-  const systemPrompt = systemMsg?.content;
-  const maxOutputTokens = body.max_tokens ?? body.maxTokens ?? 4096;
-  const hasTools = !!(body.tools && body.tools.length > 0);
-
-  let selectedModel: string;
-  let tier: string | undefined;
-  let strategy: string | undefined;
-  let costEstimate = 0;
-  let baselineCost = 0;
-  let savingsPct: number | undefined;
-
-  if (isRoutingModel) {
-    // Build model pricing map from BLOCKRUN_MODELS
-    const modelPricing = new Map(
-      BLOCKRUN_MODELS.map((m) => [
-        m.id,
-        { inputPrice: m.inputPrice, outputPrice: m.outputPrice, flatPrice: m.flatPrice },
-      ]),
+  if (!isRoutingModel(modelParam)) {
+    return c.json(
+      {
+        error: {
+          message:
+            "Direct model passthrough is not configured in the env-slot MVP. Use model=minirouter/auto, minirouter/eco, or minirouter/premium.",
+          type: "unsupported_direct_model",
+        },
+      },
+      400,
     );
-
-    try {
-      const decision = route(prompt, systemPrompt, maxOutputTokens, {
-        config: DEFAULT_ROUTING_CONFIG,
-        modelPricing,
-        routingProfile,
-        hasTools,
-      });
-
-      selectedModel = decision.model;
-      tier = decision.tier;
-      strategy = decision.method;
-      costEstimate = decision.costEstimate;
-      baselineCost = decision.baselineCost;
-      savingsPct = decision.savings;
-    } catch {
-      // Routing failed — fall back to default free model
-      selectedModel = "free/gpt-oss-120b";
-      tier = "SIMPLE";
-      strategy = "rules";
-    }
-  } else {
-    // Explicit model — resolve alias and use directly
-    selectedModel = resolveModelAlias(modelParam);
-    strategy = "direct";
   }
 
-  // Log usage (async, don't await)
+  let configured: { slot: ModelSlot; tier: RoutedTier } | null;
+  try {
+    configured = selectConfiguredSlotForChat(body);
+  } catch (error) {
+    return createUnsatisfiedSlotResponse(error);
+  }
+  if (!configured) return createMissingSlotResponse();
+
+  const request = normalizeOpenAIChatRequest(body);
+  const features = extractRoutingFeatures(request);
+  let upstream: Response;
+  try {
+    upstream = await executeConfiguredSlot(body, configured.slot);
+  } catch (error) {
+    return createProviderErrorResponse(error);
+  }
+
+  // For non-streaming responses, try to parse usage from the upstream JSON.
+  // Streaming responses still log estimated input tokens only.
+  const isStreaming = body.stream === true;
+  let outputTokens = 0;
+  let cacheReadTokens = 0;
+
+  if (!isStreaming && upstream.ok) {
+    const usage = await parseOpenAIUsage(upstream);
+    if (usage) {
+      outputTokens = usage.completionTokens;
+      cacheReadTokens = usage.cacheReadTokens;
+    }
+  }
+
   logUsage({
     userId: auth.userId,
     apiKeyId: auth.apiKeyId,
     requestId,
-    model: selectedModel,
-    tier,
-    profile: routingProfile,
-    strategy,
-    inputTokens: Math.ceil(prompt.length / 4),
-    outputTokens: 0, // Will be updated after response
-    costUsd: costEstimate,
-    baselineCostUsd: baselineCost,
-    savingsPct,
-    status: "success",
-    hasTools,
-    isStreaming: body.stream === true,
-    hasVision: false,
+    model: configured.slot.model,
+    tier: configured.tier,
+    profile: routingProfile(modelParam, c.req.header("x-routing-profile")),
+    strategy: "env-slot-native-openai-chat",
+    inputTokens: features.estimatedInputTokens,
+    outputTokens,
+    cacheReadTokens,
+    costUsd: 0,
+    status: upstream.ok ? "success" : "error",
+    hasTools: features.requirements.toolCalling,
+    isStreaming,
+    hasVision: features.requirements.vision,
   }).catch(() => {
-    // Log failure is non-fatal
+    // Log failure is non-fatal.
   });
 
-  // Phase 1: return routing decision as response (proxy integration Phase 2)
-  // Real LLM call will be wired in when proxy.ts is refactored
-  return c.json({
-    id: `chatcmpl-${requestId.slice(0, 8)}`,
-    object: "chat.completion",
-    created: Math.floor(Date.now() / 1000),
-    model: selectedModel,
-    choices: [
-      {
-        index: 0,
-        message: {
-          role: "assistant",
-          content: `[MiniRouter Phase 1] Routing decision: ${selectedModel} (${tier ?? "N/A"})`,
-        },
-        finish_reason: "stop",
-      },
-    ],
-    usage: {
-      prompt_tokens: Math.ceil(prompt.length / 4),
-      completion_tokens: 20,
-      total_tokens: Math.ceil(prompt.length / 4) + 20,
-    },
-    x_minirouter_tier: tier,
-    x_minirouter_profile: routingProfile ?? "auto",
-    x_minirouter_cost_usd: costEstimate,
-    x_minirouter_savings_pct: savingsPct ? `${(savingsPct * 100).toFixed(0)}%` : null,
-  });
+  return toMutableUpstreamResponse(upstream);
 }

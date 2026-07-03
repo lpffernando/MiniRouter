@@ -1,0 +1,50 @@
+# MiniRouter local mode
+MINIROUTER_SOLO=true
+BLOCKRUN_PROXY_PORT=8402
+
+# Provider values:
+#   Omit MINIROUTER_<SLOT>_PROVIDER for auto mode.
+#   OpenAI Chat input -> {BASE_URL}/chat/completions
+#   Anthropic Messages input -> {BASE_URL}/messages
+#   Set PROVIDER=anthropic only for native Anthropic endpoints.
+
+# FAST is optional in the MVP. Leave it unset until a cheap local/hosted fast
+# model is ready; simple requests will fall back to BALANCED.
+# MINIROUTER_FAST_BASE_URL=https://api.example.com/v1
+# MINIROUTER_FAST_API_KEY=replace-me
+# MINIROUTER_FAST_MODEL=GLM-4.7-Flash
+# MINIROUTER_FAST_SUPPORTS_TOOLS=false
+# MINIROUTER_FAST_SUPPORTS_VISION=false
+# MINIROUTER_FAST_CONTEXT_WINDOW=128000
+
+# BALANCED: default workhorse for code, tools, normal Agent steps.
+MINIROUTER_BALANCED_BASE_URL=https://api.example.com/v1
+MINIROUTER_BALANCED_API_KEY=replace-me
+MINIROUTER_BALANCED_MODEL=DeepSeek V4 Flash
+MINIROUTER_BALANCED_SUPPORTS_TOOLS=true
+MINIROUTER_BALANCED_SUPPORTS_VISION=false
+MINIROUTER_BALANCED_CONTEXT_WINDOW=1048576
+
+# STRONG: complex reasoning, hard coding, planning, multi-step debugging.
+MINIROUTER_STRONG_BASE_URL=https://api.example.com/v1
+MINIROUTER_STRONG_API_KEY=replace-me
+MINIROUTER_STRONG_MODEL=GLM-5.2
+MINIROUTER_STRONG_SUPPORTS_TOOLS=true
+MINIROUTER_STRONG_SUPPORTS_VISION=false
+MINIROUTER_STRONG_CONTEXT_WINDOW=1000000
+
+# VISION: screenshots, images, multimodal tasks.
+MINIROUTER_VISION_BASE_URL=https://api.example.com/v1
+MINIROUTER_VISION_API_KEY=replace-me
+MINIROUTER_VISION_MODEL=GLM-4.6V
+MINIROUTER_VISION_SUPPORTS_TOOLS=true
+MINIROUTER_VISION_SUPPORTS_VISION=true
+MINIROUTER_VISION_CONTEXT_WINDOW=128000
+
+# Optional Headroom context optimization.
+# Default is disabled and requests are passed through unchanged.
+MINIROUTER_HEADROOM_ENABLED=false
+MINIROUTER_HEADROOM_MODE=adaptive
+MINIROUTER_HEADROOM_URL=http://localhost:8787
+MINIROUTER_HEADROOM_MIN_TOKENS=8000
+MINIROUTER_HEADROOM_CONTEXT_RATIO=0.85

@@ -1,7 +1,11 @@
 import { serve } from "@hono/node-server";
-import { PROXY_PORT } from "../config.js";
-import { createApp } from "./app.js";
+import { loadDotEnv } from "../config/dotenv.js";
 
+loadDotEnv();
+const [{ PROXY_PORT }, { createApp }] = await Promise.all([
+  import("../config.js"),
+  import("./app.js"),
+]);
 const app = createApp();
 
 serve(

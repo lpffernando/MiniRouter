@@ -1,0 +1,111 @@
+import type { Context } from "hono";
+import { eq } from "drizzle-orm";
+
+import { getDb } from "../../db/connection.js";
+import { modelScores } from "../../db/schema.js";
+import { normalizeOpenAIChatRequest } from "../../protocols/openai-chat.js";
+import { buildRouteReceipt, type CatalogModel, type RouteProfile } from "../../routing/debug/route.js";
+import { extractRoutingFeatures } from "../../routing/features/extractor.js";
+import { selectConfiguredSlotForChat } from "./chat.js";
+
+type ModelScoreRow = typeof modelScores.$inferSelect;
+type EnvLike = Record<string, string | undefined>;
+
+export function mapModelScoreToCatalogModel(row: ModelScoreRow): CatalogModel {
+  return {
+    id: row.id,
+    displayName: row.displayName,
+    provider: row.provider,
+    type: row.type,
+    priceInput: row.priceInput,
+    priceOutput: row.priceOutput,
+    scoreCoding: row.scoreCoding,
+    scoreReasoning: row.scoreReasoning,
+    scoreChinese: row.scoreChinese,
+    scoreOverall: row.scoreOverall,
+    scoreSpeed: row.scoreSpeed,
+    hasVision: row.hasVision === 1,
+    hasVideo: row.hasVideo === 1,
+    hasAudio: row.hasAudio === 1,
+    contextWindow: row.contextWindow,
+    maxOutput: row.maxOutput,
+    supportsTools: row.supportsTools === 1,
+    supportsJson: row.supportsJson === 1,
+    isActive: row.isActive === 1,
+    priority: row.priority,
+  };
+}
+
+function parseProfile(value: string | undefined): RouteProfile {
+  if (value === "eco" || value === "premium") return value;
+  return "auto";
+}
+
+export function buildEnvSlotDebugReceipt(body: any, env: EnvLike = process.env) {
+  const request = normalizeOpenAIChatRequest(body);
+  const features = extractRoutingFeatures(request);
+  const configured = selectConfiguredSlotForChat(body, env);
+
+  if (!configured) {
+    return {
+      source: "env-slot" as const,
+      protocol: "openai-chat" as const,
+      features,
+      error: {
+        message:
+          "MiniRouter has no configured model slots. Configure BALANCED, STRONG, and VISION for the routing MVP.",
+        type: "configuration_error",
+      },
+    };
+  }
+
+  return {
+    source: "env-slot" as const,
+    protocol: "openai-chat" as const,
+    tier: configured.tier,
+    features,
+    selectedSlot: {
+      slot: configured.slot.slot,
+      provider: configured.slot.provider,
+      model: configured.slot.model,
+      baseUrl: configured.slot.baseUrl,
+      supportsTools: configured.slot.supportsTools,
+      supportsVision: configured.slot.supportsVision,
+      contextWindowTokens: configured.slot.contextWindowTokens,
+    },
+  };
+}
+
+export async function debugRoute(c: Context) {
+  const body = await c.req.json();
+  const profile = parseProfile(c.req.query("profile") ?? body.profile);
+  const source = c.req.query("source") ?? c.req.query("mode") ?? body.source ?? body.mode;
+  const protocol = body.protocol ?? "openai-chat";
+
+  if (protocol !== "openai-chat") {
+    return c.json(
+      {
+        error: {
+          message: `Unsupported debug route protocol: ${protocol}`,
+          type: "unsupported_protocol",
+        },
+      },
+      400,
+    );
+  }
+
+  if (source === "env-slot") {
+    return c.json(buildEnvSlotDebugReceipt(body));
+  }
+
+  const db = getDb();
+  const rows = await db.select().from(modelScores).where(eq(modelScores.isActive, 1));
+  const catalog = rows.map(mapModelScoreToCatalogModel);
+  const request = normalizeOpenAIChatRequest(body);
+  const receipt = buildRouteReceipt(request, catalog, { profile });
+
+  return c.json({
+    ...receipt,
+    modelCount: catalog.length,
+  });
+}
