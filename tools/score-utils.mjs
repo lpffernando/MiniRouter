@@ -10,6 +10,28 @@ export function averageScore(values) {
   return Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length);
 }
 
+export const SCORE_RULES = {
+  coding: {
+    description:
+      "SWE-bench Verified only. No fallback to SWE-bench Pro because the two leaderboards are not directly comparable.",
+    benchmark: "swe_bench_verified_score",
+  },
+  reasoning: {
+    description:
+      "GPQA only. AIME/HLE/etc. remain raw audit signals but are not mixed into the dashboard score.",
+    benchmark: "gpqa_score",
+  },
+  chinese: {
+    description:
+      "SuperCLUE general leaderboard total score, imported separately from superclueai.com. LLM Stats MMMLU is not used as a Chinese score.",
+    benchmark: "superclue_general_total_score",
+  },
+  overall: {
+    description:
+      "Plain average of available benchmark-backed dimensions, emitted only when at least two dimensions are present.",
+  },
+};
+
 export function weightedScore(signals) {
   let weighted = 0;
   let totalWeight = 0;
@@ -25,31 +47,33 @@ export function weightedScore(signals) {
   return Math.round(weighted / totalWeight);
 }
 
+export function qualifiedWeightedScore(signals, options = {}) {
+  const { minSignals = 1 } = options;
+  const availableSignals = signals.filter((signal) => percentScore(signal.value) != null);
+  if (availableSignals.length < minSignals) return null;
+  return weightedScore(signals);
+}
+
+export function directBenchmarkScore(value) {
+  return percentScore(value);
+}
+
+export function qualifiedAverageScore(values, options = {}) {
+  const { minSignals = 1 } = options;
+  const scores = values.filter((v) => typeof v === "number" && Number.isFinite(v));
+  if (scores.length < minSignals) return null;
+  return averageScore(scores);
+}
+
 export function abilityScoresFromLlmStats(model) {
-  const coding = weightedScore([
-    { value: model.swe_bench_verified_score, weight: 0.45 },
-    { value: model.swe_bench_pro_score, weight: 0.25 },
-    { value: model.scicode_score, weight: 0.15 },
-    { value: model.terminal_bench_score, weight: 0.1 },
-    { value: model.coding_arena_score ?? model.index_code, weight: 0.05 },
-  ]);
-  const reasoning = weightedScore([
-    { value: model.gpqa_score, weight: 0.35 },
-    { value: model.aime_2025_score, weight: 0.25 },
-    { value: model.hle_score, weight: 0.15 },
-    { value: model.frontiermath_score, weight: 0.1 },
-    { value: model.arc_agi_v2_score, weight: 0.05 },
-    { value: model.index_reasoning ?? model.index_math, weight: 0.1 },
-  ]);
-  const chinese = weightedScore([
-    { value: model.mmmlu_score, weight: 0.8 },
-    { value: model.simpleqa_score, weight: 0.2 },
-  ]);
+  const coding = directBenchmarkScore(model.swe_bench_verified_score);
+  const reasoning = directBenchmarkScore(model.gpqa_score);
+  const chinese = null;
 
   return {
     coding,
     reasoning,
     chinese,
-    overall: averageScore([coding, reasoning, chinese]),
+    overall: qualifiedAverageScore([coding, reasoning, chinese], { minSignals: 2 }),
   };
 }

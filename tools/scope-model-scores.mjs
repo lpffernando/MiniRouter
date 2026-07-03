@@ -2,17 +2,13 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import { abilityScoresFromLlmStats, averageScore } from "./score-utils.mjs";
+import { abilityScoresFromLlmStats } from "./score-utils.mjs";
 import { benchmarkLookupId } from "./model-benchmark-aliases.mjs";
 
 const db = new Database(join(homedir(), ".minirouter", "minirouter.db"));
 const seedModels = JSON.parse(readFileSync("models/seed-data.json", "utf8"));
 const seedIds = new Set(seedModels.map((model) => model.id));
 const now = new Date().toISOString();
-
-function cleanScore(value) {
-  return value === 0 || value == null ? null : value;
-}
 
 function snapshot(label) {
   console.log(`\n## ${label}`);
@@ -60,6 +56,8 @@ const updateSeed = db.prepare(
     release_date = @release_date,
     notes = @notes,
     verified = @verified,
+    source_pricing = @source_pricing,
+    source_benchmark = @source_benchmark,
     updated_at = @updated_at
   where id = @id
 `,
@@ -73,14 +71,14 @@ const insertSeed = db.prepare(
     score_coding, score_reasoning, score_chinese, score_creative, score_speed, score_overall,
     has_vision, has_video, has_audio,
     context_window, max_output, supports_tools, supports_json,
-    is_active, priority, release_date, notes, verified, created_at, updated_at
+    is_active, priority, release_date, notes, verified, source_pricing, source_benchmark, created_at, updated_at
   ) values (
     @id, @provider, @display_name, @type,
     @price_input, @price_output, @price_cache_hit,
     @score_coding, @score_reasoning, @score_chinese, @score_creative, @score_speed, @score_overall,
     @has_vision, @has_video, @has_audio,
     @context_window, @max_output, @supports_tools, @supports_json,
-    @is_active, @priority, @release_date, @notes, @verified, @created_at, @updated_at
+    @is_active, @priority, @release_date, @notes, @verified, @source_pricing, @source_benchmark, @created_at, @updated_at
   )
 `,
 );
@@ -91,15 +89,10 @@ const rawById = db.prepare("select * from llm_stats_models where normalized_id =
 function seedValues(model) {
   const benchmarkId = benchmarkLookupId(model.id);
   const raw = rawById.get(benchmarkId);
-  const ability = raw ? abilityScoresFromLlmStats(raw) : {
-    coding: cleanScore(model.scores?.coding),
-    reasoning: cleanScore(model.scores?.reasoning),
-    chinese: cleanScore(model.scores?.chinese),
-    overall: null,
-  };
-  const creative = cleanScore(model.scores?.creative);
-  const speed = cleanScore(model.scores?.speed);
-  const overall = ability.overall ?? averageScore([ability.coding, ability.reasoning, ability.chinese, creative]);
+  const ability = raw
+    ? abilityScoresFromLlmStats(raw)
+    : { coding: null, reasoning: null, chinese: null, overall: null };
+  const speed = raw?.throughput ? Math.round(Math.min(100, raw.throughput / 4)) : null;
 
   return {
     id: model.id,
@@ -112,9 +105,9 @@ function seedValues(model) {
     score_coding: ability.coding,
     score_reasoning: ability.reasoning,
     score_chinese: ability.chinese,
-    score_creative: creative,
+    score_creative: null,
     score_speed: speed,
-    score_overall: overall,
+    score_overall: ability.overall,
     has_vision: model.multimodal?.vision ? 1 : 0,
     has_video: model.multimodal?.video ? 1 : 0,
     has_audio: model.multimodal?.audio ? 1 : 0,
@@ -129,6 +122,10 @@ function seedValues(model) {
       ? `${model.notes ?? ""} Benchmark enriched from LLM Stats targeted source: ${benchmarkId}.`.trim()
       : (model.notes ?? null),
     verified: model.verified ? 1 : 0,
+    source_pricing: model.sourcePricing ?? null,
+    source_benchmark: raw
+      ? "https://llm-stats.com/leaderboards/llm-leaderboard"
+      : (model.sourceBenchmark ?? null),
     created_at: now,
     updated_at: now,
   };
@@ -137,15 +134,13 @@ function seedValues(model) {
 snapshot("before");
 
 const tx = db.transaction(() => {
-  db
-    .prepare(
-      `
+  db.prepare(
+    `
       delete from model_scores
       where notes like 'Imported from LLM Stats%'
         and id not in (${[...seedIds].map(() => "?").join(",")})
     `,
-    )
-    .run([...seedIds]);
+  ).run([...seedIds]);
 
   for (const model of seedModels) {
     const values = seedValues(model);

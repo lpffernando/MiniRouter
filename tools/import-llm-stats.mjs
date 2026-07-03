@@ -46,20 +46,21 @@ function normalizeProvider(org) {
 }
 
 function normalizeId(orgId, modelId) {
-  const providerPrefix = {
-    qwen: "alibaba",
-    zai: "zhipu",
-    "zai-org": "zhipu",
-    moonshotai: "moonshot",
-    openai: "openai",
-    anthropic: "anthropic",
-    google: "google",
-    deepseek: "deepseek",
-    minimax: "minimax",
-    xai: "xai",
-    meta: "meta",
-    mistral: "mistral",
-  }[orgId] ?? orgId;
+  const providerPrefix =
+    {
+      qwen: "alibaba",
+      zai: "zhipu",
+      "zai-org": "zhipu",
+      moonshotai: "moonshot",
+      openai: "openai",
+      anthropic: "anthropic",
+      google: "google",
+      deepseek: "deepseek",
+      minimax: "minimax",
+      xai: "xai",
+      meta: "meta",
+      mistral: "mistral",
+    }[orgId] ?? orgId;
   return `${providerPrefix}/${modelId}`;
 }
 
@@ -74,14 +75,24 @@ function modelType(orgId) {
     "stepfun",
     "baidu",
   ]);
-  const international = new Set(["openai", "anthropic", "google", "meta", "mistral", "xai", "ai21"]);
+  const international = new Set([
+    "openai",
+    "anthropic",
+    "google",
+    "meta",
+    "mistral",
+    "xai",
+    "ai21",
+  ]);
   if (domestic.has(orgId)) return "domestic";
   if (international.has(orgId)) return "international";
   return "candidate";
 }
 
 function nullishObject(obj) {
-  return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, value === undefined ? null : value]));
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => [key, value === undefined ? null : value]),
+  );
 }
 
 const [modelGroups, fullModels, metrics] = await Promise.all([
@@ -115,7 +126,9 @@ for (const model of fullModels) {
     score_reasoning: ability.reasoning,
     score_chinese: ability.chinese,
     score_creative: null,
-    score_speed: metric?.avg_throughput ? Math.round(Math.min(100, metric.avg_throughput / 4)) : null,
+    score_speed: metric?.avg_throughput
+      ? Math.round(Math.min(100, metric.avg_throughput / 4))
+      : null,
     score_overall: ability.overall,
     has_vision: model.multimodal ? 1 : 0,
     has_video: 0,
@@ -134,8 +147,12 @@ for (const model of fullModels) {
       "Imported from LLM Stats full leaderboard.",
       model.license ? `license=${model.license}` : null,
       model.organization_country ? `country=${model.organization_country}` : null,
-      metric ? `avg_throughput=${metric.avg_throughput}; p95_latency=${metric.p95_latency}; failure_rate=${metric.failure_rate}` : null,
-    ].filter(Boolean).join(" "),
+      metric
+        ? `avg_throughput=${metric.avg_throughput}; p95_latency=${metric.p95_latency}; failure_rate=${metric.failure_rate}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
     verified: 0,
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -145,6 +162,7 @@ for (const model of fullModels) {
 writeFileSync("tmp/llm-stats-normalized-models.json", JSON.stringify(rows, null, 2));
 
 const dbPath = join(homedir(), ".minirouter", "minirouter.db");
+mkdirSync(join(homedir(), ".minirouter"), { recursive: true });
 const db = new Database(dbPath);
 
 db.exec(`
@@ -180,6 +198,8 @@ CREATE TABLE IF NOT EXISTS model_scores (
   release_date TEXT,
   notes TEXT,
   verified INTEGER DEFAULT 0,
+  source_pricing TEXT,
+  source_benchmark TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -247,6 +267,17 @@ CREATE TABLE IF NOT EXISTS llm_stats_models (
 CREATE INDEX IF NOT EXISTS idx_llm_stats_org ON llm_stats_models(organization_id);
 CREATE INDEX IF NOT EXISTS idx_llm_stats_release ON llm_stats_models(release_date);
 `);
+
+for (const statement of [
+  "ALTER TABLE model_scores ADD COLUMN source_pricing TEXT",
+  "ALTER TABLE model_scores ADD COLUMN source_benchmark TEXT",
+]) {
+  try {
+    db.prepare(statement).run();
+  } catch (error) {
+    if (!String(error.message).includes("duplicate column name")) throw error;
+  }
+}
 
 const columns = Object.keys(rows[0]);
 const updateColumns = columns.filter((c) => c !== "id" && c !== "created_at");
@@ -419,7 +450,8 @@ const fullTx = db.transaction((items) => {
             metric?.avg_throughput && metric.avg_throughput > 0
               ? metric.avg_throughput
               : model.throughput,
-          latency: metric?.p95_latency && metric.p95_latency > 0 ? metric.p95_latency : model.latency,
+          latency:
+            metric?.p95_latency && metric.p95_latency > 0 ? metric.p95_latency : model.latency,
           raw_json: JSON.stringify(model),
           source_url: SOURCES.fullModels,
           imported_at: nowIso(),
@@ -431,7 +463,9 @@ const fullTx = db.transaction((items) => {
 fullTx(fullModels);
 
 console.log(`Fetched organizations: ${modelGroups.length}`);
-console.log(`Fetched listed models: ${modelGroups.reduce((sum, org) => sum + (org.models?.length ?? 0), 0)}`);
+console.log(
+  `Fetched listed models: ${modelGroups.reduce((sum, org) => sum + (org.models?.length ?? 0), 0)}`,
+);
 console.log(`Fetched full leaderboard models: ${fullModels.length}`);
 console.log(`Fetched metrics: ${metrics.length}`);
 console.log(`Updated database: ${dbPath}`);

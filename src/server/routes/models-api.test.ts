@@ -34,6 +34,8 @@ describe("mapModelScoreRow", () => {
       orRank: null,
       orWeeklyVolume: null,
       orWeeklyChange: null,
+      sourcePricing: null,
+      sourceBenchmark: "https://llm-stats.com/leaderboards/llm-leaderboard",
       isActive: 1,
       priority: 10,
       releaseDate: "2026-07",
