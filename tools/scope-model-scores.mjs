@@ -118,9 +118,7 @@ function seedValues(model) {
     is_active: model.isActive ? 1 : 0,
     priority: model.priority ?? 0,
     release_date: model.releaseDate ?? null,
-    notes: raw
-      ? `${model.notes ?? ""} Benchmark enriched from LLM Stats targeted source: ${benchmarkId}.`.trim()
-      : (model.notes ?? null),
+    notes: model.notes ?? null,
     verified: model.verified ? 1 : 0,
     source_pricing: model.sourcePricing ?? null,
     source_benchmark: raw
@@ -137,8 +135,7 @@ const tx = db.transaction(() => {
   db.prepare(
     `
       delete from model_scores
-      where notes like 'Imported from LLM Stats%'
-        and id not in (${[...seedIds].map(() => "?").join(",")})
+      where id not in (${[...seedIds].map(() => "?").join(",")})
     `,
   ).run([...seedIds]);
 

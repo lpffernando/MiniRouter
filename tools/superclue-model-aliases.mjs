@@ -10,6 +10,7 @@ export const SUPERCLUE_MODEL_ALIASES = {
   "DeepSeek-V4-Pro(max)": "deepseek/v4-pro",
   "Doubao-Seed-2.0-lite-260428(high)": "bytedance/seed-2.0-lite",
   "Doubao-Seed-2.0-pro-260215(high)": "bytedance/seed-2.0-pro",
+  "ERNIE 5.1": "baidu/ernie-5.1",
   "GLM-5.1": "zhipu/glm-5.1",
   "GPT-5.5(high)": "openai/gpt-5.5",
   "Hy3 preview(high)": "tencent/hy3-preview",

@@ -118,27 +118,27 @@
       "cacheHit": 2
     },
     "scores": {
-      "coding": 59.1,
-      "reasoning": 48.8,
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
     },
     "multimodal": {
-      "vision": true,
+      "vision": false,
       "video": false,
       "audio": false
     },
     "specs": {
       "contextWindow": 1048576,
-      "maxOutput": 32768,
+      "maxOutput": 131072,
       "supportsTools": true,
       "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
     "releaseDate": "2026-06-17",
-    "notes": "旗舰。1M上下文。Code Arena全球#1(1595)。SWE-bench Pro62.1,GPQA~90。",
+    "notes": "Official model overview: 1M context, 128K max output; latest GLM flagship text model.",
     "verified": true,
     "sourcePricing": "https://open.bigmodel.cn/pricing",
     "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
@@ -154,27 +154,63 @@
       "cacheHit": 1.3
     },
     "scores": {
-      "coding": 50.3,
-      "reasoning": 41.1,
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
     },
     "multimodal": {
-      "vision": true,
+      "vision": false,
       "video": false,
       "audio": false
     },
     "specs": {
-      "contextWindow": 128000,
-      "maxOutput": 16384,
+      "contextWindow": 200000,
+      "maxOutput": 131072,
       "supportsTools": true,
       "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
     "releaseDate": "2026-03",
-    "notes": "推理模型。华为昇腾训练。LCB77.2,GPQA86.2,AIME95.3,SWE-bench58.4。",
+    "notes": "Official model overview: 200K context, 128K max output; long-horizon coding and agent tasks.",
+    "verified": true,
+    "sourcePricing": "https://open.bigmodel.cn/pricing",
+    "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
+  },
+  {
+    "id": "zhipu/glm-5",
+    "provider": "智谱",
+    "displayName": "GLM-5",
+    "type": "domestic",
+    "pricing": {
+      "input": 4,
+      "output": 18,
+      "cacheHit": 1
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "specs": {
+      "contextWindow": 200000,
+      "maxOutput": 131072,
+      "supportsTools": true,
+      "supportsJson": true
+    },
+    "isActive": true,
+    "priority": 0,
+    "releaseDate": "2026-02",
+    "notes": "Official model overview: 200K context, 128K max output; agentic planning and execution.",
     "verified": true,
     "sourcePricing": "https://open.bigmodel.cn/pricing",
     "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
@@ -190,6 +226,8 @@
       "cacheHit": 1.2
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -200,53 +238,18 @@
       "audio": false
     },
     "specs": {
-      "contextWindow": 128000,
-      "maxOutput": 16384,
+      "contextWindow": 200000,
+      "maxOutput": 131072,
       "supportsTools": true,
       "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
     "releaseDate": "2026-Q1",
-    "notes": "≤32K¥5/22,>32K¥7/26。缓存限免。",
-    "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
-  },
-  {
-    "id": "zhipu/glm-5",
-    "provider": "智谱",
-    "displayName": "GLM-5",
-    "type": "domestic",
-    "pricing": {
-      "input": 4,
-      "output": 18,
-      "cacheHit": 1
-    },
-    "scores": {
-      "coding": 49.3,
-      "reasoning": 34.5,
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "specs": {
-      "contextWindow": 128000,
-      "maxOutput": 16384,
-      "supportsTools": true,
-      "supportsJson": true
-    },
-    "isActive": true,
-    "priority": 0,
-    "releaseDate": "2026-02",
-    "notes": "聊天模型。LCB68.9,GPQA86.0,AIME92.7。",
+    "notes": "Official model overview: 200K context, 128K max output; optimized for complex long tasks.",
     "verified": true,
     "sourcePricing": "https://open.bigmodel.cn/pricing",
-    "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
     "id": "zhipu/glm-4.7",
@@ -259,6 +262,8 @@
       "cacheHit": 0.4
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -270,16 +275,17 @@
     },
     "specs": {
       "contextWindow": 200000,
-      "maxOutput": 16384,
+      "maxOutput": 131072,
       "supportsTools": true,
       "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
     "releaseDate": "2026-Q1",
-    "notes": "分段:≤32K且输出≤200t:¥2/8;输出>200t:¥3/14;32-200K:¥4/16。",
+    "notes": "Official model overview: 200K context, 128K max output; upgraded general dialogue, reasoning, and agent capability.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://open.bigmodel.cn/pricing",
+    "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
   },
   {
     "id": "zhipu/glm-4.7-flashx",
@@ -292,6 +298,8 @@
       "cacheHit": 0.1
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -303,28 +311,31 @@
     },
     "specs": {
       "contextWindow": 200000,
-      "maxOutput": 8192,
+      "maxOutput": 131072,
       "supportsTools": true,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
     "releaseDate": "2026-Q1",
-    "notes": "高速低价。200K上下文¥0.5/3。",
+    "notes": "Official model overview: 200K context, 128K max output; lightweight high-speed model.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://open.bigmodel.cn/pricing",
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
-    "id": "zhipu/glm-4.7-flash",
+    "id": "zhipu/glm-4.6",
     "provider": "智谱",
-    "displayName": "GLM-4.7-Flash",
+    "displayName": "GLM-4.6",
     "type": "domestic",
     "pricing": {
-      "input": 0,
-      "output": 0,
-      "cacheHit": 0
+      "input": 2,
+      "output": 8,
+      "cacheHit": 0.4
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -336,28 +347,31 @@
     },
     "specs": {
       "contextWindow": 200000,
-      "maxOutput": 4096,
-      "supportsTools": false,
-      "supportsJson": false
+      "maxOutput": 131072,
+      "supportsTools": true,
+      "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2026-Q1",
-    "notes": "免费！200K上下文。",
+    "releaseDate": "2026-01",
+    "notes": "Official model overview: 200K context, 128K max output; advanced coding, reasoning, and tool use.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://bigmodel.cn/pricing",
+    "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
   },
   {
-    "id": "zhipu/glm-4-plus",
+    "id": "zhipu/glm-4.5-air",
     "provider": "智谱",
-    "displayName": "GLM-4-Plus",
+    "displayName": "GLM-4.5-Air",
     "type": "domestic",
     "pricing": {
-      "input": 5,
-      "output": 5,
-      "cacheHit": 2.5
+      "input": 0.8,
+      "output": 2,
+      "cacheHit": 0.16
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -369,28 +383,31 @@
     },
     "specs": {
       "contextWindow": 131072,
-      "maxOutput": 8192,
+      "maxOutput": 98304,
       "supportsTools": true,
       "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2025-Q3",
-    "notes": "高智能旗舰。输入输出同价¥5。",
+    "releaseDate": "2025-07",
+    "notes": "Official model overview: 128K context, 96K max output; cost-effective lightweight agent model.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://bigmodel.cn/pricing",
+    "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
   },
   {
-    "id": "zhipu/glm-4-air",
+    "id": "zhipu/glm-4.5-airx",
     "provider": "智谱",
-    "displayName": "GLM-4-Air",
+    "displayName": "GLM-4.5-AirX",
     "type": "domestic",
     "pricing": {
-      "input": 0.5,
-      "output": 0.5,
-      "cacheHit": 0.25
+      "input": null,
+      "output": null,
+      "cacheHit": null
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -402,16 +419,17 @@
     },
     "specs": {
       "contextWindow": 131072,
-      "maxOutput": 8192,
+      "maxOutput": 98304,
       "supportsTools": true,
       "supportsJson": true
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2025",
-    "notes": "高性价比。¥0.5同价。",
+    "releaseDate": "2025-07",
+    "notes": "Official model overview: 128K context, 96K max output; low-latency high-response Air variant.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://bigmodel.cn/pricing",
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
     "id": "zhipu/glm-4-long",
@@ -424,6 +442,8 @@
       "cacheHit": 0.5
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -435,61 +455,31 @@
     },
     "specs": {
       "contextWindow": 1048576,
-      "maxOutput": 8192,
+      "maxOutput": 4096,
       "supportsTools": false,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
     "releaseDate": "2025",
-    "notes": "1M上下文。¥1/1。",
+    "notes": "Official model overview: 1M context, 4K max output; ultra-long text and memory tasks.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://open.bigmodel.cn/pricing",
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
-    "id": "zhipu/glm-4-flash",
+    "id": "zhipu/glm-4-flashx-250414",
     "provider": "智谱",
-    "displayName": "GLM-4-Flash",
-    "type": "domestic",
-    "pricing": {
-      "input": 0,
-      "output": 0,
-      "cacheHit": null
-    },
-    "scores": {
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 8192,
-      "supportsTools": false,
-      "supportsJson": false
-    },
-    "isActive": true,
-    "priority": 0,
-    "releaseDate": "2024-Q4",
-    "notes": "免费！128K上下文。",
-    "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
-  },
-  {
-    "id": "zhipu/glm-4-flashx",
-    "provider": "智谱",
-    "displayName": "GLM-4-FlashX",
+    "displayName": "GLM-4-FlashX-250414",
     "type": "domestic",
     "pricing": {
       "input": 0.1,
       "output": 0.1,
-      "cacheHit": 0.05
+      "cacheHit": null
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -501,28 +491,67 @@
     },
     "specs": {
       "contextWindow": 131072,
-      "maxOutput": 8192,
+      "maxOutput": 16384,
       "supportsTools": true,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2025-H1",
-    "notes": "高速低价。¥0.1同价。",
+    "releaseDate": "2025-04-14",
+    "notes": "Official model overview: 128K context, 16K max output; enhanced high-speed Flash model.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://bigmodel.cn/pricing",
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
-    "id": "zhipu/glm-z1-air",
+    "id": "zhipu/glm-4.7-flash",
     "provider": "智谱",
-    "displayName": "GLM-Z1-Air",
+    "displayName": "GLM-4.7-Flash",
     "type": "domestic",
     "pricing": {
-      "input": 0.5,
-      "output": 0.5,
-      "cacheHit": null
+      "input": 0,
+      "output": 0,
+      "cacheHit": 0
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "specs": {
+      "contextWindow": 200000,
+      "maxOutput": 131072,
+      "supportsTools": false,
+      "supportsJson": false
+    },
+    "isActive": true,
+    "priority": 0,
+    "releaseDate": "2026-Q1",
+    "notes": "Official model overview: free model with 200K context and 128K max output, based on GLM-4.7.",
+    "verified": true,
+    "sourcePricing": "https://open.bigmodel.cn/pricing",
+    "sourceBenchmark": "https://llm-stats.com/leaderboards/llm-leaderboard"
+  },
+  {
+    "id": "zhipu/glm-4.5-flash",
+    "provider": "智谱",
+    "displayName": "GLM-4.5-Flash",
+    "type": "domestic",
+    "pricing": {
+      "input": 0,
+      "output": 0,
+      "cacheHit": 0
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -534,21 +563,22 @@
     },
     "specs": {
       "contextWindow": 131072,
-      "maxOutput": 8192,
+      "maxOutput": 98304,
       "supportsTools": false,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2025",
-    "notes": "推理模型。¥0.5输入(仅推理,无输出价)。",
+    "releaseDate": "2025-07",
+    "notes": "Official model overview: 128K context, 96K max output; free model, marked as upcoming retirement by upstream docs.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://bigmodel.cn/pricing",
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
-    "id": "zhipu/glm-z1-flash",
+    "id": "zhipu/glm-4-flash-250414",
     "provider": "智谱",
-    "displayName": "GLM-Z1-Flash",
+    "displayName": "GLM-4-Flash-250414",
     "type": "domestic",
     "pricing": {
       "input": 0,
@@ -556,6 +586,8 @@
       "cacheHit": null
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -567,49 +599,17 @@
     },
     "specs": {
       "contextWindow": 131072,
-      "maxOutput": 8192,
-      "supportsTools": false,
+      "maxOutput": 16384,
+      "supportsTools": true,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2025",
-    "notes": "免费推理模型。",
+    "releaseDate": "2025-04-14",
+    "notes": "Official model overview: 128K context, 16K max output; free long-context multilingual/tool-use model.",
     "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
-  },
-  {
-    "id": "zhipu/glm-z1-flashx",
-    "provider": "智谱",
-    "displayName": "GLM-Z1-FlashX",
-    "type": "domestic",
-    "pricing": {
-      "input": 0.1,
-      "output": 0.1,
-      "cacheHit": null
-    },
-    "scores": {
-      "chinese": null,
-      "creative": null,
-      "speed": null
-    },
-    "multimodal": {
-      "vision": false,
-      "video": false,
-      "audio": false
-    },
-    "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 8192,
-      "supportsTools": false,
-      "supportsJson": false
-    },
-    "isActive": true,
-    "priority": 0,
-    "releaseDate": "2025",
-    "notes": "高速低价推理。",
-    "verified": true,
-    "sourcePricing": "https://open.bigmodel.cn/pricing"
+    "sourcePricing": "https://bigmodel.cn/pricing",
+    "sourceBenchmark": "https://docs.bigmodel.cn/cn/guide/start/model-overview"
   },
   {
     "id": "alibaba/qwen3.7-max",
@@ -2392,9 +2392,45 @@
     "sourcePricing": "https://platform.stepfun.com/docs/zh/guides/pricing/details"
   },
   {
+    "id": "baidu/ernie-5.1",
+    "provider": "百度",
+    "displayName": "ERNIE 5.1",
+    "type": "domestic",
+    "pricing": {
+      "input": 4,
+      "output": 18,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "specs": {
+      "contextWindow": 128000,
+      "maxOutput": 65536,
+      "supportsTools": true,
+      "supportsJson": false
+    },
+    "isActive": true,
+    "priority": 0,
+    "releaseDate": "2026-05",
+    "notes": "Official pricing lists ERNIE-5.1 at RMB 4/18 per million tokens for <=32K input and RMB 6/22 for 32K-128K input.",
+    "verified": true,
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
+  },
+  {
     "id": "baidu/ernie-5.0",
     "provider": "百度",
-    "displayName": "ERNIE-5.0",
+    "displayName": "ERNIE 5.0",
     "type": "domestic",
     "pricing": {
       "input": 6,
@@ -2402,30 +2438,30 @@
       "cacheHit": null
     },
     "scores": {
-      "coding": 81,
-      "reasoning": 85,
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
     },
     "multimodal": {
       "vision": true,
-      "video": false,
-      "audio": false
+      "video": true,
+      "audio": true
     },
     "specs": {
       "contextWindow": 128000,
-      "maxOutput": 16384,
+      "maxOutput": 65536,
       "supportsTools": true,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2026-Q1",
-    "notes": "百度旗舰。MMLU-Pro87.0,GPQA85.0,AIME87.0,LiveCodeBench~81。",
+    "releaseDate": "2026-05",
+    "notes": "Official model list: flagship native multimodal model, 128K context and 64K max output. Pricing uses <=32K input tier; 32K-128K is RMB 10/40.",
     "verified": true,
     "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
-    "sourceBenchmark": "https://llm-stats.com/models/compare/ernie-5.0-vs-qwen3.5-0.8b"
+    "sourceBenchmark": "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
   },
   {
     "id": "baidu/ernie-4.5-turbo",
@@ -2438,27 +2474,66 @@
       "cacheHit": 0.2
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
     },
     "multimodal": {
-      "vision": true,
+      "vision": false,
       "video": false,
       "audio": false
     },
     "specs": {
       "contextWindow": 131072,
+      "maxOutput": 12288,
+      "supportsTools": true,
+      "supportsJson": false
+    },
+    "isActive": true,
+    "priority": 0,
+    "releaseDate": "2026-04",
+    "notes": "Official pricing covers ERNIE-4.5-Turbo-128K, 32K, and 20260402 variants at RMB 0.8/3.2 per million tokens; cache hit RMB 0.2.",
+    "verified": true,
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
+  },
+  {
+    "id": "baidu/ernie-4.5",
+    "provider": "百度",
+    "displayName": "ERNIE 4.5",
+    "type": "domestic",
+    "pricing": {
+      "input": 4,
+      "output": 16,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "specs": {
+      "contextWindow": 8192,
       "maxOutput": 8192,
       "supportsTools": true,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2026-Q1",
-    "notes": "¥0.8/3.2便宜。缓存¥0.2。Batch¥0.32/1.28。需适配器。",
+    "releaseDate": "2026-04",
+    "notes": "Official pricing lists ERNIE-4.5-8K at RMB 4/16 per million tokens.",
     "verified": true,
-    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a"
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
   },
   {
     "id": "baidu/ernie-x1.1",
@@ -2471,6 +2546,8 @@
       "cacheHit": null
     },
     "scores": {
+      "coding": null,
+      "reasoning": null,
       "chinese": null,
       "creative": null,
       "speed": null
@@ -2481,17 +2558,54 @@
       "audio": false
     },
     "specs": {
-      "contextWindow": 131072,
-      "maxOutput": 16384,
-      "supportsTools": false,
+      "contextWindow": 65536,
+      "maxOutput": 65536,
+      "supportsTools": true,
       "supportsJson": false
     },
     "isActive": true,
     "priority": 0,
-    "releaseDate": "2026-Q1",
-    "notes": "推理模型。¥1/4。",
+    "releaseDate": "2026-05",
+    "notes": "Official model list: recommended deep-thinking model with 64K context and 64K max output.",
     "verified": true,
-    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a"
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
+  },
+  {
+    "id": "baidu/ernie-x1-turbo",
+    "provider": "百度",
+    "displayName": "ERNIE X1 Turbo",
+    "type": "domestic",
+    "pricing": {
+      "input": 1,
+      "output": 4,
+      "cacheHit": null
+    },
+    "scores": {
+      "coding": null,
+      "reasoning": null,
+      "chinese": null,
+      "creative": null,
+      "speed": null
+    },
+    "multimodal": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "specs": {
+      "contextWindow": 32768,
+      "maxOutput": 32768,
+      "supportsTools": true,
+      "supportsJson": false
+    },
+    "isActive": true,
+    "priority": 0,
+    "releaseDate": "2026-05",
+    "notes": "Official pricing lists ERNIE-X1-Turbo-32K at RMB 1/4 per million tokens.",
+    "verified": true,
+    "sourcePricing": "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a",
+    "sourceBenchmark": "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
   },
   {
     "id": "openai/gpt-5.5",
