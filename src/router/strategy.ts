@@ -182,13 +182,16 @@ export class RulesStrategy implements RouterStrategy {
       }
     }
 
-    // effort:"high" hard-override → REASONING.
-    // effort is the client's thinking-depth hint; "high" means the user wants
-    // the strong model. low/medium do NOT override — 14-dim score decides.
-    if (options.effort === "high") {
+    // effort hard-override → REASONING.
+    // Only "xhigh"/"max" (user explicitly wants the strongest model) override.
+    // "high" is the API default — Claude Code sends it on every request, so
+    // overriding on "high" would force every Claude Code request to glm.
+    // "low"/"medium" do not override — 14-dim score decides.
+    // Future: "low" should route to a free slot when one is configured.
+    if (options.effort === "xhigh" || options.effort === "max") {
       const tierRank: Record<Tier, number> = { SIMPLE: 0, MEDIUM: 1, COMPLEX: 2, REASONING: 3 };
       if (tierRank[tier] < tierRank.REASONING) {
-        reasoning += ` | effort:high → REASONING`;
+        reasoning += ` | effort:${options.effort} → REASONING`;
         tier = "REASONING";
         confidence = Math.max(confidence, 0.9);
       }

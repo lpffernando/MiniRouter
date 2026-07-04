@@ -26,11 +26,14 @@ type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
 /**
  * Extract client-declared thinking effort from request body.
  * OpenAI: body.reasoning_effort; also accept body.output_config.effort.
+ * Official 5 levels: low | medium | high | xhigh | max.
  * Returns undefined when absent — router falls back to 14-dim score.
  */
-function readEffort(body: any): "low" | "medium" | "high" | undefined {
+function readEffort(body: any): "low" | "medium" | "high" | "xhigh" | "max" | undefined {
   const e = body?.output_config?.effort ?? body?.reasoning_effort;
-  return e === "low" || e === "medium" || e === "high" ? e : undefined;
+  return e === "low" || e === "medium" || e === "high" || e === "xhigh" || e === "max"
+    ? e
+    : undefined;
 }
 
 function getPromptParts(body: any): { prompt: string; systemPrompt?: string } {

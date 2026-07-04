@@ -133,15 +133,38 @@ describe("RulesStrategy", () => {
     expect(decision.tierConfigs).toEqual(DEFAULT_ROUTING_CONFIG.tiers);
   });
 
-  it("effort:high hard-overrides tier to REASONING even for simple prompts", () => {
+  it("effort:high does NOT override tier (high is API default, Claude Code sends it always)", () => {
     const strategy = new RulesStrategy();
     const decision = strategy.route("hi", undefined, 100, {
       ...baseOptions,
       effort: "high",
     });
 
+    // "hi" scores SIMPLE; effort:high must not force REASONING
+    expect(decision.tier).toBe("SIMPLE");
+    expect(decision.reasoning).not.toContain("effort:");
+  });
+
+  it("effort:xhigh hard-overrides tier to REASONING", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route("hi", undefined, 100, {
+      ...baseOptions,
+      effort: "xhigh",
+    });
+
     expect(decision.tier).toBe("REASONING");
-    expect(decision.reasoning).toContain("effort:high");
+    expect(decision.reasoning).toContain("effort:xhigh");
+  });
+
+  it("effort:max hard-overrides tier to REASONING", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route("hi", undefined, 100, {
+      ...baseOptions,
+      effort: "max",
+    });
+
+    expect(decision.tier).toBe("REASONING");
+    expect(decision.reasoning).toContain("effort:max");
   });
 
   it("effort:low does NOT override — 14-dim score decides", () => {
@@ -151,20 +174,8 @@ describe("RulesStrategy", () => {
       effort: "low",
     });
 
-    // "hi" scores SIMPLE; effort:low must not change that
     expect(decision.tier).toBe("SIMPLE");
-    expect(decision.reasoning).not.toContain("effort:high");
-  });
-
-  it("effort:high with tools still routes to REASONING (effort wins, not tools)", () => {
-    const strategy = new RulesStrategy();
-    const decision = strategy.route("ok", undefined, 100, {
-      ...baseOptions,
-      hasTools: true,
-      effort: "high",
-    });
-
-    expect(decision.tier).toBe("REASONING");
+    expect(decision.reasoning).not.toContain("effort:");
   });
 
   it("sets auto profile for default requests", () => {

@@ -52,11 +52,13 @@ export type RouterOptions = {
   hasTools?: boolean;
   /**
    * Client-declared thinking effort (from body.output_config.effort).
-   * "high" hard-overrides tier to REASONING. Other values do not override
-   * — the 14-dim score decides. effort is a client→API thinking-depth hint
-   * that *also* signals "user wants the strong model", so we honor it.
+   * Official 5 levels: low | medium | high | xhigh | max.
+   * "high" is the API default (Claude Code sends it by default) — does NOT
+   * override tier. Only "xhigh"/"max" (user explicitly wants strongest)
+   * hard-override tier to REASONING. low/medium do not override.
+   * Future: "low" should route to a free slot when one is configured.
    */
-  effort?: "low" | "medium" | "high";
+  effort?: "low" | "medium" | "high" | "xhigh" | "max";
   /** Override current time for promotion window checks (for testing). Default: new Date() */
   now?: Date;
 };
