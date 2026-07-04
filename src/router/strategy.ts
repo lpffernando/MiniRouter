@@ -105,29 +105,30 @@ export class RulesStrategy implements RouterStrategy {
       profileSuffix = config.premiumTiers ? " | premium" : " | premium (default tiers)";
       profile = "premium";
     } else {
-      // Auto profile (or undefined): intelligent routing with agentic detection.
+      // Auto profile (or undefined): intelligent routing.
+      //
+      // Tool presence is a CAPABILITY GATE (slot must support tools), NOT a
+      // difficulty signal. A "好" reply in a tool-bearing session should not
+      // be force-routed to the strong model. Difficulty is decided by the
+      // 14-dim score + effort override below.
       //
       // `agenticMode` semantics:
       //   - `true`  → force agentic tiers (ignore heuristics)
-      //   - `false` → disable agentic tiers entirely (even if tools are present)
-      //   - `undefined` → auto-detect via heuristics (tools present OR high agenticScore)
+      //   - `false` → disable agentic tiers entirely
+      //   - `undefined` → auto-detect via agenticScore only (not tool presence)
       const agenticScore = ruleResult.agenticScore ?? 0;
       const isAutoAgentic = agenticScore >= 0.5;
       const agenticModeSetting = config.overrides.agenticMode;
-      const hasToolsInRequest = options.hasTools ?? false;
       let useAgenticTiers: boolean;
       if (agenticModeSetting === false) {
-        // Explicitly disabled — never use agentic tiers
         useAgenticTiers = false;
       } else if (agenticModeSetting === true) {
-        // Explicitly enabled — use agentic tiers if available
         useAgenticTiers = config.agenticTiers != null;
       } else {
-        // Auto-detect
-        useAgenticTiers = (hasToolsInRequest || isAutoAgentic) && config.agenticTiers != null;
+        useAgenticTiers = isAutoAgentic && config.agenticTiers != null;
       }
       tierConfigs = useAgenticTiers ? config.agenticTiers! : config.tiers;
-      profileSuffix = useAgenticTiers ? ` | agentic${hasToolsInRequest ? " (tools)" : ""}` : "";
+      profileSuffix = useAgenticTiers ? " | agentic" : "";
       profile = useAgenticTiers ? "agentic" : "auto";
     }
 
@@ -178,6 +179,18 @@ export class RulesStrategy implements RouterStrategy {
       if (tierRank[tier] < tierRank[minTier]) {
         reasoning += ` | upgraded to ${minTier} (structured output)`;
         tier = minTier;
+      }
+    }
+
+    // effort:"high" hard-override → REASONING.
+    // effort is the client's thinking-depth hint; "high" means the user wants
+    // the strong model. low/medium do NOT override — 14-dim score decides.
+    if (options.effort === "high") {
+      const tierRank: Record<Tier, number> = { SIMPLE: 0, MEDIUM: 1, COMPLEX: 2, REASONING: 3 };
+      if (tierRank[tier] < tierRank.REASONING) {
+        reasoning += ` | effort:high → REASONING`;
+        tier = "REASONING";
+        confidence = Math.max(confidence, 0.9);
       }
     }
 

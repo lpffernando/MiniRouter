@@ -23,6 +23,16 @@ import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
 type EnvLike = Record<string, string | undefined>;
 type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
 
+/**
+ * Extract client-declared thinking effort from request body.
+ * OpenAI: body.reasoning_effort; also accept body.output_config.effort.
+ * Returns undefined when absent — router falls back to 14-dim score.
+ */
+function readEffort(body: any): "low" | "medium" | "high" | undefined {
+  const e = body?.output_config?.effort ?? body?.reasoning_effort;
+  return e === "low" || e === "medium" || e === "high" ? e : undefined;
+}
+
 function getPromptParts(body: any): { prompt: string; systemPrompt?: string } {
   const request = normalizeOpenAIChatRequest(body);
   const prompt = request.messages
@@ -54,11 +64,13 @@ export function selectConfiguredSlotForChat(
   const request = normalizeOpenAIChatRequest(body);
   const features = extractRoutingFeatures(request);
   const { prompt, systemPrompt } = getPromptParts(body);
+  const effort = readEffort(body);
   const decision = route(prompt, systemPrompt, request.maxOutputTokens, {
     config: DEFAULT_ROUTING_CONFIG,
     modelPricing: buildModelPricing(),
     routingProfile: undefined,
     hasTools: features.requirements.toolCalling,
+    effort,
   });
   const explicitSlot = typeof body.model === "string" ? getSlotForRoutingModel(slots, body.model) : undefined;
 

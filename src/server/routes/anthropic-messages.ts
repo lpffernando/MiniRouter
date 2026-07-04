@@ -18,6 +18,16 @@ type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
 
 type SlotConfig = { slot: ModelSlot; tier: RoutedTier; features: RoutingFeatures };
 
+/**
+ * Extract client-declared thinking effort from request body.
+ * Anthropic: body.output_config.effort ("low" | "medium" | "high").
+ * Returns undefined when absent — router falls back to 14-dim score.
+ */
+function readEffort(body: any): "low" | "medium" | "high" | undefined {
+  const e = body?.output_config?.effort;
+  return e === "low" || e === "medium" || e === "high" ? e : undefined;
+}
+
 function promptParts(request: ReturnType<typeof normalizeAnthropicMessagesRequest>): { prompt: string; systemPrompt?: string } {
   const prompt = request.messages
     .filter((message) => message.role !== "system")
@@ -44,11 +54,13 @@ export function selectConfiguredSlotForAnthropicMessages(
   const request = normalizeAnthropicMessagesRequest(body);
   const features = extractRoutingFeatures(request);
   const { prompt, systemPrompt } = promptParts(request);
+  const effort = readEffort(body);
   const decision = route(prompt, systemPrompt, request.maxOutputTokens, {
     config: DEFAULT_ROUTING_CONFIG,
     modelPricing: buildModelPricing(),
     routingProfile: undefined,
     hasTools: features.requirements.toolCalling,
+    effort,
   });
   const explicitSlot = typeof body.model === "string" ? getSlotForRoutingModel(slots, body.model) : undefined;
 

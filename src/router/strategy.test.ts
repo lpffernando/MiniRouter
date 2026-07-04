@@ -120,15 +120,51 @@ describe("RulesStrategy", () => {
     expect(decision.tierConfigs).toEqual(DEFAULT_ROUTING_CONFIG.tiers);
   });
 
-  it("sets agentic profile when tools are present", () => {
+  it("does NOT set agentic profile when only tools are present (tools are a capability gate, not difficulty)", () => {
+    // Regression: a "好" reply in a tool-bearing session used to be force-routed
+    // to the strong model via agentic tiers. Tools no longer trigger agentic.
     const strategy = new RulesStrategy();
     const decision = strategy.route("hello", undefined, 100, {
       ...baseOptions,
       hasTools: true,
     });
 
-    expect(decision.profile).toBe("agentic");
-    expect(decision.tierConfigs).toEqual(DEFAULT_ROUTING_CONFIG.agenticTiers);
+    expect(decision.profile).toBe("auto");
+    expect(decision.tierConfigs).toEqual(DEFAULT_ROUTING_CONFIG.tiers);
+  });
+
+  it("effort:high hard-overrides tier to REASONING even for simple prompts", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route("hi", undefined, 100, {
+      ...baseOptions,
+      effort: "high",
+    });
+
+    expect(decision.tier).toBe("REASONING");
+    expect(decision.reasoning).toContain("effort:high");
+  });
+
+  it("effort:low does NOT override — 14-dim score decides", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route("hi", undefined, 100, {
+      ...baseOptions,
+      effort: "low",
+    });
+
+    // "hi" scores SIMPLE; effort:low must not change that
+    expect(decision.tier).toBe("SIMPLE");
+    expect(decision.reasoning).not.toContain("effort:high");
+  });
+
+  it("effort:high with tools still routes to REASONING (effort wins, not tools)", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route("ok", undefined, 100, {
+      ...baseOptions,
+      hasTools: true,
+      effort: "high",
+    });
+
+    expect(decision.tier).toBe("REASONING");
   });
 
   it("sets auto profile for default requests", () => {

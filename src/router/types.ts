@@ -50,6 +50,13 @@ export type RouterOptions = {
   modelPricing: Map<string, import("./selector.js").ModelPricing>;
   routingProfile?: "eco" | "auto" | "premium";
   hasTools?: boolean;
+  /**
+   * Client-declared thinking effort (from body.output_config.effort).
+   * "high" hard-overrides tier to REASONING. Other values do not override
+   * — the 14-dim score decides. effort is a client→API thinking-depth hint
+   * that *also* signals "user wants the strong model", so we honor it.
+   */
+  effort?: "low" | "medium" | "high";
   /** Override current time for promotion window checks (for testing). Default: new Date() */
   now?: Date;
 };
