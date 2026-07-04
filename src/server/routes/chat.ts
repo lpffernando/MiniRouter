@@ -19,6 +19,7 @@ import type { ModelSlot } from "../../providers/types.js";
 import { executeOpenAICompatibleChat } from "../../providers/openai-compatible.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
 import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
+import { createSseUsageTap } from "../sse-usage-tap.js";
 import { materializeLocalMediaReferencesWithDiagnostics } from "../../providers/client-adapter.js";
 
 type EnvLike = Record<string, string | undefined>;
@@ -281,11 +282,52 @@ export async function chatCompletions(c: Context) {
   }
 
   // For non-streaming responses, try to parse usage from the upstream JSON.
-  // Streaming responses still log estimated input tokens only.
+  // For streaming responses, tap the SSE stream to capture usage, then log
+  // after the stream ends.
   const isStreaming = body.stream === true;
   let inputTokens = features.estimatedInputTokens;
   let outputTokens = 0;
   let cacheReadTokens = 0;
+
+  if (isStreaming && upstream.ok && upstream.body) {
+    const { passthrough, finalUsage } = createSseUsageTap(upstream.body, "openai");
+    const response = new Response(passthrough, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: new Headers(upstream.headers),
+    });
+    finalUsage
+      .then((u) => {
+        try {
+          logUsage({
+            userId: auth.userId,
+            apiKeyId: auth.apiKeyId,
+            requestId,
+            model: configured.slot.model,
+            tier: configured.tier,
+            profile: routingProfile(modelParam, c.req.header("x-routing-profile")),
+            strategy: "env-slot-native-openai-chat",
+            inputTokens: u.inputTokens ?? inputTokens,
+            outputTokens: u.outputTokens ?? 0,
+            cacheReadTokens: u.cacheReadTokens ?? 0,
+            costUsd: 0,
+            status: "success",
+            hasTools: features.requirements.toolCalling,
+            isStreaming,
+            hasVision: hadVision,
+            promptDigest: extractPromptDigest(request.messages) ?? undefined,
+          }).catch((err) => {
+            console.error("[MiniRouter] Failed to write stream usage log:", (err as Error).message);
+          });
+        } catch (err) {
+          console.error("[MiniRouter] stream usage log error:", (err as Error).message);
+        }
+      })
+      .catch(() => {
+        // 流被客户端中断,不写 log
+      });
+    return response;
+  }
 
   if (!isStreaming && upstream.ok) {
     const usage = await parseOpenAIUsage(upstream);

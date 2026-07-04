@@ -18,6 +18,7 @@ import type { ModelSlot } from "../../providers/types.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
 import { parseAnthropicUsage, toMutableUpstreamResponse } from "./chat.js";
 import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
+import { createSseUsageTap } from "../sse-usage-tap.js";
 
 type EnvLike = Record<string, string | undefined>;
 type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
@@ -337,9 +338,51 @@ export async function anthropicMessages(c: Context) {
   }
 
   // For non-streaming responses, try to parse usage from the upstream JSON.
+  // For streaming responses, tap the SSE stream to capture usage from
+  // message_start/message_delta events, then logUsage after the stream ends.
   const isStreaming = body.stream === true;
   let inputTokens = configured.features.estimatedInputTokens;
   let outputTokens = 0;
+
+  if (isStreaming && upstream.ok && upstream.body) {
+    const { passthrough, finalUsage } = createSseUsageTap(upstream.body, "anthropic");
+    // 流式:返回 passthrough 给客户端,流结束后异步写 logUsage
+    const response = new Response(passthrough, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: new Headers(upstream.headers),
+    });
+    // 不阻塞响应 — 流结束后再写 usage log
+    finalUsage
+      .then((u) => {
+        try {
+          logUsage({
+            userId: auth.userId,
+            apiKeyId: auth.apiKeyId,
+            requestId,
+            model: configured.slot.model,
+            tier: configured.tier,
+            strategy: "env-slot-native-anthropic",
+            inputTokens: u.inputTokens ?? inputTokens,
+            outputTokens: u.outputTokens ?? 0,
+            costUsd: 0,
+            status: "success",
+            hasTools: configured.features.requirements.toolCalling,
+            isStreaming,
+            hasVision: hadVision || configured.features.requirements.vision,
+            promptDigest: promptDigest ?? undefined,
+          }).catch((err) => {
+            console.error("[MiniRouter] Failed to write stream usage log:", (err as Error).message);
+          });
+        } catch (err) {
+          console.error("[MiniRouter] stream usage log error:", (err as Error).message);
+        }
+      })
+      .catch(() => {
+        // 流被客户端中断等,不写 log
+      });
+    return response;
+  }
 
   if (!isStreaming && upstream.ok) {
     const usage = await parseAnthropicUsage(upstream);
