@@ -18,7 +18,7 @@ import { getSlotForRoutingModel, loadModelSlotsFromEnv, pickSlotForFeatures } fr
 import type { ModelSlot } from "../../providers/types.js";
 import { executeOpenAICompatibleChat } from "../../providers/openai-compatible.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
-import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
+import { extractPromptDigest, extractLastUserText } from "../../routing/features/prompt-digest.js";
 import { createSseUsageTap } from "../sse-usage-tap.js";
 import { materializeLocalMediaReferencesWithDiagnostics } from "../../providers/client-adapter.js";
 
@@ -46,7 +46,7 @@ function readEffort(body: any): "low" | "medium" | "high" | "xhigh" | "max" | un
     : undefined;
 }
 
-function getPromptParts(body: any): { prompt: string; systemPrompt?: string } {
+function getPromptParts(body: any): { prompt: string; systemPrompt?: string; classifierText?: string } {
   const request = normalizeOpenAIChatRequest(body);
   const prompt = request.messages
     .filter((message) => message.role !== "system")
@@ -60,7 +60,10 @@ function getPromptParts(body: any): { prompt: string; systemPrompt?: string } {
     .filter((block) => block.type === "text")
     .map((block) => block.text)
     .join("\n");
-  return { prompt, systemPrompt: systemPrompt || undefined };
+  // 分类器只看当前 user turn — 避免长会话每轮都命中所有关键词
+  // 导致永远路由到 REASONING。prompt 仍用完整对话历史做 token 估算。
+  const classifierText = extractLastUserText(request.messages) ?? undefined;
+  return { prompt, systemPrompt: systemPrompt || undefined, classifierText };
 }
 
 export function slotCanServeOpenAIChat(slot: ModelSlot): boolean {
@@ -70,13 +73,13 @@ export function slotCanServeOpenAIChat(slot: ModelSlot): boolean {
 export function selectConfiguredSlotForChat(
   body: any,
   env: EnvLike = process.env,
-): { slot: ModelSlot; tier: RoutedTier } | null {
+): { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium" | undefined; effort?: string; debug: unknown } | null {
   const slots = loadModelSlotsFromEnv(env);
   if (Object.keys(slots).length === 0) return null;
 
   const request = normalizeOpenAIChatRequest(body);
   const features = extractRoutingFeatures(request);
-  const { prompt, systemPrompt } = getPromptParts(body);
+  const { prompt, systemPrompt, classifierText } = getPromptParts(body);
   const effort = readEffort(body);
   const modelParam: string = body.model ?? "minirouter/auto";
   const profile = routingProfile(modelParam, undefined);
@@ -86,7 +89,7 @@ export function selectConfiguredSlotForChat(
     routingProfile: profile,
     hasTools: features.requirements.toolCalling,
     effort,
-  });
+  }, classifierText);
   const explicitSlot = getSlotForRoutingModel(slots, modelParam);
 
   if (explicitSlot) {
@@ -98,12 +101,17 @@ export function selectConfiguredSlotForChat(
     }
     return {
       tier: decision.tier,
+      profile,
+      effort,
       slot: explicitSlot,
+      debug: decision.debug ?? null,
     };
   }
 
   return {
     tier: decision.tier,
+    profile,
+    effort,
     slot: pickSlotForFeatures(slots, {
       tier: decision.tier,
       profile,
@@ -113,6 +121,7 @@ export function selectConfiguredSlotForChat(
         agentic: features.requirements.agentic,
       },
     }),
+    debug: decision.debug ?? null,
   };
 }
 
@@ -283,10 +292,18 @@ function routingProfile(model: string, headerProfile: string | undefined): "eco"
 
 export async function chatCompletions(c: Context) {
   const auth = c.get("auth") as AuthResult;
+  const traceEnabled = process.env["MINIROUTER_TRACE_LOG"] === "true";
+  const traceStart = Date.now();
+  const trace = (stage: string) => {
+    if (traceEnabled) console.error(`[MiniRouter trace] chat ${stage} +${Date.now() - traceStart}ms`);
+  };
+  trace("start");
   let body = await c.req.json();
+  trace("json_parsed");
   const requestId = randomUUID();
   const localMedia = materializeLocalMediaReferencesWithDiagnostics(body, "openai-chat");
   body = localMedia.body;
+  trace(`local_media:${localMedia.status}`);
   if (localMedia.status !== "no_path" && localMedia.status !== "no_text" && localMedia.status !== "no_messages") {
     console.error(
       `[MiniRouter] local media materialization status=${localMedia.status} path=${localMedia.filePath ?? "n/a"} bytes=${localMedia.bytes ?? "n/a"}`,
@@ -307,24 +324,33 @@ export async function chatCompletions(c: Context) {
     );
   }
 
-  let configured: { slot: ModelSlot; tier: RoutedTier } | null;
+  let configured: { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium" | undefined; effort?: string; debug: unknown } | null;
   try {
+    trace("select_slot_start");
     configured = selectConfiguredSlotForChat(body);
+    trace(`select_slot_done:${configured?.slot.slot ?? "none"}`);
   } catch (error) {
     return createUnsatisfiedSlotResponse(error);
   }
   if (!configured) return createMissingSlotResponse();
 
+  trace("normalize_start");
   const request = normalizeOpenAIChatRequest(body);
+  trace("normalize_done");
+  trace("features_start");
   const features = extractRoutingFeatures(request);
+  trace("features_done");
   const hadVision = features.requirements.vision;
   let upstream: Response;
   let optimization: OptimizationLog = {};
   try {
+    trace("execute_slot_start");
     const result = await executeConfiguredSlot(body, configured.slot);
+    trace(`execute_slot_done:${result.upstream.status}`);
     upstream = result.upstream;
     optimization = result.optimization;
   } catch (error) {
+    trace(`execute_slot_error:${(error as Error).message}`);
     return createProviderErrorResponse(error);
   }
 
@@ -332,6 +358,7 @@ export async function chatCompletions(c: Context) {
   // For streaming responses, tap the SSE stream to capture usage, then log
   // after the stream ends.
   const isStreaming = body.stream === true;
+  const startedAt = Date.now();
   let inputTokens = features.estimatedInputTokens;
   let outputTokens = 0;
   let cacheReadTokens = 0;
@@ -352,12 +379,15 @@ export async function chatCompletions(c: Context) {
             requestId,
             model: configured.slot.model,
             tier: configured.tier,
-            profile: routingProfile(modelParam, c.req.header("x-routing-profile")),
+            profile: configured.profile,
             strategy: "env-slot-native-openai-chat",
+            effort: configured.effort,
+            routingDebug: configured.debug ? JSON.stringify(configured.debug) : undefined,
             inputTokens: u.inputTokens ?? inputTokens,
             outputTokens: u.outputTokens ?? 0,
             cacheReadTokens: u.cacheReadTokens ?? 0,
             costUsd: 0,
+            latencyMs: Date.now() - startedAt,
             status: "success",
             hasTools: features.requirements.toolCalling,
             isStreaming,
@@ -393,13 +423,17 @@ export async function chatCompletions(c: Context) {
       requestId,
       model: configured.slot.model,
       tier: configured.tier,
-      profile: routingProfile(modelParam, c.req.header("x-routing-profile")),
+      profile: configured.profile,
       strategy: "env-slot-native-openai-chat",
+      effort: configured.effort,
+      routingDebug: configured.debug ? JSON.stringify(configured.debug) : undefined,
       inputTokens,
       outputTokens,
       cacheReadTokens,
       costUsd: 0,
+      latencyMs: Date.now() - startedAt,
       status: upstream.ok ? "success" : "error",
+      errorType: upstream.ok ? undefined : `http_${upstream.status}`,
       hasTools: features.requirements.toolCalling,
       isStreaming,
       hasVision: hadVision,

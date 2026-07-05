@@ -33,6 +33,8 @@ export interface LogUsageInput {
   compressionOriginalChars?: number;
   compressionCompressedChars?: number;
   compressionBlocks?: number;
+  routingDebug?: string;
+  effort?: string;
 }
 
 export async function logUsage(input: LogUsageInput): Promise<void> {
@@ -64,6 +66,8 @@ export async function logUsage(input: LogUsageInput): Promise<void> {
     compressionOriginalChars: input.compressionOriginalChars ?? 0,
     compressionCompressedChars: input.compressionCompressedChars ?? 0,
     compressionBlocks: input.compressionBlocks ?? 0,
+    routingDebug: input.routingDebug ?? null,
+    effort: input.effort ?? null,
     createdAt: new Date().toISOString(),
   });
 }

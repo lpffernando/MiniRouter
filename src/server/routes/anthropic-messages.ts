@@ -17,13 +17,13 @@ import {
 import type { ModelSlot } from "../../providers/types.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
 import { parseAnthropicUsage, toMutableUpstreamResponse } from "./chat.js";
-import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
+import { extractPromptDigest, extractLastUserText } from "../../routing/features/prompt-digest.js";
 import { createSseUsageTap } from "../sse-usage-tap.js";
 
 type EnvLike = Record<string, string | undefined>;
 type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
 
-type SlotConfig = { slot: ModelSlot; tier: RoutedTier; features: RoutingFeatures };
+type SlotConfig = { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium"; effort?: string; debug: unknown; features: RoutingFeatures };
 type OptimizationLog = {
   reason?: string;
   compression?: {
@@ -59,7 +59,7 @@ function routingProfileFromModel(model: string): "auto" | "eco" | "premium" {
   return "auto";
 }
 
-function promptParts(request: ReturnType<typeof normalizeAnthropicMessagesRequest>): { prompt: string; systemPrompt?: string } {
+function promptParts(request: ReturnType<typeof normalizeAnthropicMessagesRequest>): { prompt: string; systemPrompt?: string; classifierText?: string } {
   const prompt = request.messages
     .filter((message) => message.role !== "system")
     .flatMap((message) => message.content)
@@ -72,7 +72,10 @@ function promptParts(request: ReturnType<typeof normalizeAnthropicMessagesReques
     .filter((block) => block.type === "text")
     .map((block) => block.text)
     .join("\n");
-  return { prompt, systemPrompt: systemPrompt || undefined };
+  // 分类器只看当前 user turn — 否则长会话每轮都命中所有关键词,
+  // 永远路由到 REASONING。prompt 仍用完整对话历史做 token 估算。
+  const classifierText = extractLastUserText(request.messages) ?? undefined;
+  return { prompt, systemPrompt: systemPrompt || undefined, classifierText };
 }
 
 // ─── Vision content detection / preprocessing ───────────────────────────────
@@ -92,7 +95,14 @@ export function hasVisionContent(messages: unknown): boolean {
   });
 }
 
-function stripImages(body: Record<string, unknown>, observation: string): Record<string, unknown> {
+const STRIPPED_VISION_PLACEHOLDER = "[MiniRouter vision content removed after preprocessing]";
+
+function ensureNonEmptyContentBlocks(parts: unknown[]): unknown[] {
+  if (parts.length > 0) return parts;
+  return [{ type: "text", text: STRIPPED_VISION_PLACEHOLDER }];
+}
+
+export function stripImages(body: Record<string, unknown>, observation: string): Record<string, unknown> {
   const messages = body.messages;
   if (!Array.isArray(messages)) return body;
 
@@ -125,13 +135,13 @@ ${observation}
 - 不要再声称无法查看图片或视频；只有当观察记录明确不足时，才说明缺少哪些视觉信息。`,
       });
     }
-    return { ...record, content: textBlocks };
+    return { ...record, content: ensureNonEmptyContentBlocks(textBlocks) };
   });
 
   return { ...body, messages: cleaned };
 }
 
-function stripImagesFallback(body: Record<string, unknown>): Record<string, unknown> {
+export function stripImagesFallback(body: Record<string, unknown>): Record<string, unknown> {
   const messages = body.messages;
   if (!Array.isArray(messages)) return body;
 
@@ -153,7 +163,7 @@ function stripImagesFallback(body: Record<string, unknown>): Record<string, unkn
         text: "[视觉分析失败]\n用户分享了一张图片/视频，但视觉预处理模块未能成功分析。以下为已知信息：\n- 图片/视频文件已接收，但视觉模型暂时不可用或分析超时。\n- 请基于用户问题中的文字信息和你的知识尽力回答。\n- 如果问题完全依赖视觉内容，请如实告知用户当前无法分析图片。",
       });
     }
-    return { ...record, content: textBlocks };
+    return { ...record, content: ensureNonEmptyContentBlocks(textBlocks) };
   });
 
   return { ...body, messages: cleaned };
@@ -201,7 +211,7 @@ export function selectConfiguredSlotForAnthropicMessages(
 
   const request = normalizeAnthropicMessagesRequest(body);
   const features = extractRoutingFeatures(request);
-  const { prompt, systemPrompt } = promptParts(request);
+  const { prompt, systemPrompt, classifierText } = promptParts(request);
   const effort = readEffort(body);
   const modelParam = typeof body.model === "string" ? body.model : "minirouter/auto";
   const profile = routingProfileFromModel(modelParam);
@@ -211,7 +221,7 @@ export function selectConfiguredSlotForAnthropicMessages(
     routingProfile: profile,
     hasTools: features.requirements.toolCalling,
     effort,
-  });
+  }, classifierText);
   const explicitSlot = getSlotForRoutingModel(slots, modelParam);
 
   if (explicitSlot) {
@@ -223,13 +233,18 @@ export function selectConfiguredSlotForAnthropicMessages(
     }
     return {
       tier: decision.tier,
+      profile,
+      effort,
       slot: explicitSlot,
+      debug: decision.debug ?? null,
       features,
     };
   }
 
   return {
     tier: decision.tier,
+    profile,
+    effort,
     slot: pickSlotForFeatures(slots, {
       tier: decision.tier,
       profile,
@@ -239,6 +254,7 @@ export function selectConfiguredSlotForAnthropicMessages(
         agentic: features.requirements.agentic,
       },
     }),
+    debug: decision.debug ?? null,
     features,
   };
 }
@@ -393,6 +409,7 @@ export async function anthropicMessages(c: Context) {
   // For streaming responses, tap the SSE stream to capture usage from
   // message_start/message_delta events, then logUsage after the stream ends.
   const isStreaming = body.stream === true;
+  const startedAt = Date.now();
   let inputTokens = configured.features.estimatedInputTokens;
   let outputTokens = 0;
   let cacheReadTokens = 0;
@@ -415,11 +432,15 @@ export async function anthropicMessages(c: Context) {
             requestId,
             model: configured.slot.model,
             tier: configured.tier,
+            profile: configured.profile,
             strategy: "env-slot-native-anthropic",
+            effort: configured.effort,
+            routingDebug: configured.debug ? JSON.stringify(configured.debug) : undefined,
             inputTokens: u.inputTokens ?? inputTokens,
             outputTokens: u.outputTokens ?? 0,
             cacheReadTokens: u.cacheReadTokens ?? 0,
             costUsd: 0,
+            latencyMs: Date.now() - startedAt,
             status: "success",
             hasTools: configured.features.requirements.toolCalling,
             isStreaming,
@@ -455,12 +476,17 @@ export async function anthropicMessages(c: Context) {
       requestId,
       model: configured.slot.model,
       tier: configured.tier,
+      profile: configured.profile,
       strategy: "env-slot-native-anthropic",
+      effort: configured.effort,
+      routingDebug: configured.debug ? JSON.stringify(configured.debug) : undefined,
       inputTokens,
       outputTokens,
       cacheReadTokens,
       costUsd: 0,
+      latencyMs: Date.now() - startedAt,
       status: upstream.ok ? "success" : "error",
+      errorType: upstream.ok ? undefined : `http_${upstream.status}`,
       hasTools: configured.features.requirements.toolCalling,
       isStreaming,
       hasVision: hadVision || configured.features.requirements.vision,

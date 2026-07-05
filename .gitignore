@@ -13,3 +13,5 @@ dist-e2e/
 *.db-wal
 tmp/
 logs/
+.external/
+.claude/settings.local.json

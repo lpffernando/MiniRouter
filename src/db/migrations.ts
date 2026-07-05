@@ -127,6 +127,12 @@ export async function runMigrations(): Promise<void> {
   addColumnIfMissing("usage_logs", "compression_original_chars", "compression_original_chars INTEGER DEFAULT 0");
   addColumnIfMissing("usage_logs", "compression_compressed_chars", "compression_compressed_chars INTEGER DEFAULT 0");
   addColumnIfMissing("usage_logs", "compression_blocks", "compression_blocks INTEGER DEFAULT 0");
+  // Routing audit + effort passthrough (added 2026-07-05)
+  addColumnIfMissing("usage_logs", "routing_debug", "routing_debug TEXT");
+  addColumnIfMissing("usage_logs", "effort", "effort TEXT");
+  addColumnIfMissing("usage_logs", "latency_ms", "latency_ms INTEGER");
+  addColumnIfMissing("usage_logs", "first_token_ms", "first_token_ms INTEGER");
+  addColumnIfMissing("usage_logs", "error_type", "error_type TEXT");
 
   db.run(sql`
     CREATE TABLE IF NOT EXISTS provider_instances (

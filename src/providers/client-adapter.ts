@@ -400,20 +400,6 @@ function anthropicContentToMiniCpmOpenAI(content: unknown, mode: "vision-prompt"
   return converted;
 }
 
-function systemContentToText(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((part) => {
-      if (typeof part === "string") return part;
-      if (typeof part !== "object" || part === null) return "";
-      const record = part as Record<string, unknown>;
-      return typeof record["text"] === "string" ? record["text"] : "";
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
 function selectMiniCpmVisionPrompt(messages: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(messages)) return [];
 
@@ -477,10 +463,9 @@ const DEFAULT_VISION_OBSERVER_PROMPT =
 
 export function adaptAnthropicMessagesToMiniCpmVisionOpenAI(body: Record<string, unknown>): Record<string, unknown> {
   const messages = selectMiniCpmVisionPrompt(body["messages"]);
-  const system = systemContentToText(body["system"]);
   messages.unshift({
     role: "system",
-    content: system ? truncateText(system, 1000) : DEFAULT_VISION_OBSERVER_PROMPT,
+    content: DEFAULT_VISION_OBSERVER_PROMPT,
   });
 
   const result: Record<string, unknown> = {

@@ -414,6 +414,8 @@ Default behavior is pass-through:
 
 ```txt
 MINIROUTER_HEADROOM_ENABLED=false
+MINIROUTER_HEADROOM_MODE=off
+MINIROUTER_TAIL_COMPRESSION_ENABLED=false
 ```
 
 When enabled, Headroom is controlled by:
@@ -446,6 +448,18 @@ slot, and policy hints such as `protectStaticPrefix` and
 `preserveNativeApiShape`. Headroom should return the same API shape with an
 optimized body. If Headroom is disabled, unavailable, or returns an error,
 MiniRouter uses the original body.
+
+Important MVP note: MiniRouter's current integration expects a local
+`POST /optimize` service. Official `headroom proxy --port 8787` exposes LLM
+proxy endpoints (`/v1/messages`, `/v1/chat/completions`, etc.), not MiniRouter's
+`/optimize` contract. Keep MiniRouter compression disabled while validating the
+routing gateway. `start-headroom.bat` can start the official Headroom proxy for
+experiments, but a small adapter layer is still required before flipping
+`MINIROUTER_HEADROOM_ENABLED=true` in production routing.
+
+For cache-sensitive Agent traffic, prefer Headroom `--mode cache` once the
+adapter exists. This protects prior turns and static prefixes so provider
+prefix-cache hit rate is not destroyed by unnecessary rewrites.
 
 ## External Design References
 

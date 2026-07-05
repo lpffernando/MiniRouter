@@ -4,11 +4,90 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import {
+  stripImages,
+  stripImagesFallback,
+} from "./anthropic-messages.js";
+
+import {
   adaptAnthropicMessagesToMiniCpmVisionOpenAI,
   adaptMiniCpmVisionOpenAIResponseToAnthropic,
   materializeLocalMediaReferences,
   materializeLocalMediaReferencesWithDiagnostics,
 } from "../../providers/client-adapter.js";
+
+describe("vision preprocessing stripImages", () => {
+  it("does not leave empty content arrays after stripping multiple vision-only messages", () => {
+    const body = stripImages({
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "video",
+              source: { type: "base64", media_type: "video/mp4", data: "abc123" },
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: "image/png", data: "def456" },
+            },
+          ],
+        },
+      ],
+    }, "detailed visual observation");
+
+    const messages = body.messages as Array<{ content: unknown[] }>;
+    expect(messages.every((message) => Array.isArray(message.content) && message.content.length > 0)).toBe(true);
+    expect(messages[0].content).toContainEqual(expect.objectContaining({
+      type: "text",
+      text: expect.stringContaining("detailed visual observation"),
+    }));
+    expect(messages[1].content).toEqual([
+      {
+        type: "text",
+        text: "[MiniRouter vision content removed after preprocessing]",
+      },
+    ]);
+  });
+
+  it("does not leave empty content arrays when vision preprocessing falls back", () => {
+    const body = stripImagesFallback({
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "video_url",
+              video_url: { url: "data:video/mp4;base64,abc123" },
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: "data:image/png;base64,def456" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const messages = body.messages as Array<{ content: unknown[] }>;
+    expect(messages.every((message) => Array.isArray(message.content) && message.content.length > 0)).toBe(true);
+    expect(messages[1].content).toEqual([
+      {
+        type: "text",
+        text: "[MiniRouter vision content removed after preprocessing]",
+      },
+    ]);
+  });
+});
 
 describe("materializeLocalMediaReferences", () => {
   it("keeps native multimodal content unchanged", () => {
@@ -169,12 +248,17 @@ describe("adaptAnthropicMessagesToMiniCpmVisionOpenAI", () => {
       output_config: { effort: "high" },
     });
 
+    const systemPrompt = String((body.messages as Array<Record<string, unknown>>)[0]?.content);
+    expect(systemPrompt).not.toBe("Be concise.");
+    expect(systemPrompt).toContain("LLM");
+    expect(systemPrompt).toContain("OCR");
+
     expect(body).toEqual({
       model: "minirouter/auto",
       stream: false,
       max_tokens: 2048,
       messages: [
-        { role: "system", content: "Be concise." },
+        { role: "system", content: expect.any(String) },
         {
           role: "user",
           content: [
@@ -276,9 +360,10 @@ describe("adaptAnthropicMessagesToMiniCpmVisionOpenAI", () => {
     });
 
     expect(body.messages).toEqual([
-      { role: "system", content: "Root instruction." },
+      { role: "system", content: expect.any(String) },
       { role: "user", content: [{ type: "text", text: "After" }] },
     ]);
+    expect(String((body.messages as Array<Record<string, unknown>>)[0]?.content)).not.toBe("Root instruction.");
   });
 
   it("projects long agent history to the latest visual input and user question", () => {

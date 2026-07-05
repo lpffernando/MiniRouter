@@ -65,6 +65,34 @@ ready. Simple requests fall back to `BALANCED`.
 npm.cmd run serve
 ```
 
+or use the foreground helper:
+
+```powershell
+.\restart.bat
+```
+
+## Optional Headroom Proxy
+
+The MVP should start with MiniRouter compression disabled:
+
+```env
+MINIROUTER_HEADROOM_ENABLED=false
+MINIROUTER_HEADROOM_MODE=off
+MINIROUTER_TAIL_COMPRESSION_ENABLED=false
+```
+
+`start-headroom.bat` starts the official Headroom proxy on `127.0.0.1:8787` in
+cache mode:
+
+```powershell
+.\start-headroom.bat
+```
+
+This is useful for experiments, but it is not yet a drop-in replacement for
+MiniRouter's `POST /optimize` integration contract. Keep MiniRouter pass-through
+until an adapter is added or MiniRouter is changed to route through Headroom's
+official proxy endpoints.
+
 ## Check Readiness
 
 ```powershell
@@ -109,3 +137,18 @@ Invoke-RestMethod http://localhost:8402/v1/chat/completions `
 
 Use `minirouter/slot/strong` or `minirouter/slot/vision` when you want to force a
 specific configured slot.
+
+## Claude Agent Routing
+
+Claude-style Agent requests usually arrive on `/v1/messages` with
+`model=minirouter/auto`, `tools`, `thinking`, and `output_config.effort`.
+
+MiniRouter handles them as follows:
+
+- `SIMPLE` / `MEDIUM` route to `BALANCED`.
+- `COMPLEX` / `REASONING` route to `STRONG`.
+- Tool presence is only a capability gate; tools do not force `STRONG`.
+- Vision content is first sent to the `VISION` slot for observation, then the
+  main request is routed normally.
+- `thinking` and `output_config.effort` are passed through unchanged and do not
+  decide the model.

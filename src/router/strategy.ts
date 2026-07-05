@@ -88,15 +88,28 @@ export class RulesStrategy implements RouterStrategy {
     systemPrompt: string | undefined,
     maxOutputTokens: number,
     options: RouterOptions,
+    classifierText?: string,
   ): RoutingDecision {
     const { config, modelPricing } = options;
 
-    // Estimate input tokens (~4 chars per token)
+    // Estimate input tokens (~4 chars per token) — uses FULL conversation
+    // text (system + all turns) so context length is reflected accurately
+    // for model selection (context window fits, long-context tier, etc.).
     const fullText = `${systemPrompt ?? ""} ${prompt}`;
     const estimatedTokens = Math.ceil(fullText.length / 4);
 
+    // The classifier scores ONLY the current user turn — otherwise every
+    // turn in a long coding session hits every keyword (function/证明/edit…)
+    // and routes to REASONING regardless of what the user actually asked.
+    // Callers pass the last user message as classifierText; if absent
+    // (older callers / tests), fall back to the full prompt.
+    const classifierInput = classifierText ?? prompt;
+
     // --- Rule-based classification (runs first to get agenticScore) ---
-    const ruleResult = classifyByRules(prompt, systemPrompt, estimatedTokens, config.scoring);
+    const ruleResult = classifyByRules(classifierInput, systemPrompt, estimatedTokens, config.scoring);
+    const tierRaw = ruleResult.tier; // classifier tier before upgrades
+    let upgraded = false;
+    let upgradeReason: string | undefined;
 
     // --- Select tier configs based on routing profile ---
     const { routingProfile } = options;
@@ -172,14 +185,18 @@ export class RulesStrategy implements RouterStrategy {
       tier = config.overrides.ambiguousDefaultTier;
       confidence = 0.5;
       reasoning += ` | ambiguous -> default: ${tier}`;
+      upgraded = true;
+      upgradeReason = `ambiguous -> default ${tier}`;
     }
 
-    if (hasExplicitStrongModelIntent(prompt)) {
+    if (hasExplicitStrongModelIntent(classifierInput)) {
       const tierRank: Record<Tier, number> = { SIMPLE: 0, MEDIUM: 1, COMPLEX: 2, REASONING: 3 };
       if (tierRank[tier] < tierRank.COMPLEX) {
         tier = "COMPLEX";
         confidence = Math.max(confidence, 0.8);
         reasoning += " | upgraded to COMPLEX (explicit strong-model request)";
+        upgraded = true;
+        upgradeReason = "explicit strong-model request";
       }
     }
 
@@ -190,6 +207,10 @@ export class RulesStrategy implements RouterStrategy {
       if (tierRank[tier] < tierRank[minTier]) {
         reasoning += ` | upgraded to ${minTier} (structured output)`;
         tier = minTier;
+        upgraded = true;
+        upgradeReason = upgradeReason
+          ? `${upgradeReason} + structured output`
+          : "structured output";
       }
     }
 
@@ -212,7 +233,22 @@ export class RulesStrategy implements RouterStrategy {
       routingProfile,
       agenticScoreValue,
     );
-    return { ...decision, tierConfigs, profile };
+    const debug = {
+      score: ruleResult.score,
+      tierRaw,
+      confidence: ruleResult.confidence,
+      agenticScore: ruleResult.agenticScore ?? 0,
+      upgraded,
+      upgradeReason,
+      signals: ruleResult.signals,
+      dimensions: ruleResult.dimensions ?? [],
+    };
+    if (process.env.MINIROUTER_DEBUG_LOG === "true") {
+      console.error(
+        `[route] score=${debug.score.toFixed(3)} tierRaw=${tierRaw ?? "null"} tier=${tier} conf=${confidence.toFixed(2)} agentic=${debug.agenticScore} upgraded=${upgraded} signals=[${debug.signals.join(",")}]`,
+      );
+    }
+    return { ...decision, tierConfigs, profile, debug };
   }
 }
 

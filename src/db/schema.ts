@@ -135,6 +135,16 @@ export const usageLogs = sqliteTable(
     compressionCompressedChars: integer("compression_compressed_chars").default(0),
     compressionBlocks: integer("compression_blocks").default(0),
 
+    // Routing audit — full 14-dim breakdown so any misroute can be
+    // reproduced after the fact. JSON blob:
+    //   { score, tierRaw, confidence, agenticScore, upgraded, upgradeReason,
+    //     signals, dimensions:[{name,score,signal}] }
+    routingDebug: text("routing_debug"),
+
+    // Client-declared thinking effort (low|medium|high|xhigh|max) — passthrough
+    // hint that does NOT participate in model selection. NULL when absent.
+    effort: text("effort"),
+
     createdAt: text("created_at").notNull(),
   },
   (table) => [

@@ -1,6 +1,17 @@
+/**
+ * Headroom context optimization.
+ *
+ * Adaptive mode is intentionally tail-only:
+ * - scan for oversized tool output / tool_result tail blocks
+ * - send only those blocks to Headroom
+ * - merge compressed tails back into the original request
+ *
+ * Force mode keeps full-message Headroom compression for manual experiments.
+ */
+
 import type { ModelSlot } from "../providers/types.js";
+import { compress } from "headroom-ai";
 import {
-  compressRequestTail,
   loadTailCompressionConfig,
   type TailCompressionConfig,
 } from "./tail-compression.js";
@@ -18,17 +29,16 @@ export type HeadroomConfig = {
 
 export type HeadroomProtocol = "openai-chat" | "anthropic-messages";
 
+export type HeadroomReason =
+  | "disabled"
+  | "force"
+  | "headroom_compress"
+  | "no_compression";
+
 export type HeadroomResult<TBody> = {
   body: TBody;
   applied: boolean;
-  reason:
-    | "disabled"
-    | "short_request"
-    | "no_url"
-    | "force"
-    | "min_tokens"
-    | "context_headroom"
-    | "local_tail_compression";
+  reason: HeadroomReason;
   compression?: {
     originalChars: number;
     compressedChars: number;
@@ -38,6 +48,18 @@ export type HeadroomResult<TBody> = {
 
 type EnvLike = Record<string, string | undefined>;
 type FetchLike = typeof fetch;
+
+type OpenAIToolMessage = {
+  role: "tool";
+  content: string;
+  tool_call_id?: string;
+};
+
+type TailTarget<TBody extends Record<string, unknown>> = {
+  originalChars: number;
+  messages: OpenAIToolMessage[];
+  apply: (body: TBody, compressed: unknown[]) => TBody | null;
+};
 
 function readBool(value: string | undefined): boolean {
   return value === "true" || value === "1" || value === "yes";
@@ -67,67 +89,226 @@ export function loadHeadroomConfig(env: EnvLike = process.env): HeadroomConfig {
   };
 }
 
-function estimateTokens(body: unknown): number {
-  return Math.ceil(JSON.stringify(body).length / 4);
+function isOversizedTail(content: string, config: TailCompressionConfig): boolean {
+  return config.enabled && content.length >= config.minChars;
 }
 
-function maxOutputTokens(body: Record<string, unknown>): number {
-  const value = body["max_tokens"] ?? body["max_completion_tokens"];
-  return typeof value === "number" ? value : 0;
+function extractMessages(body: Record<string, unknown>): unknown[] | undefined {
+  const msgs = body["messages"];
+  return Array.isArray(msgs) ? msgs : undefined;
 }
 
-function shouldOptimize<TBody extends Record<string, unknown>>(
+function setMessages<TBody extends Record<string, unknown>>(
   body: TBody,
-  slot: ModelSlot,
-  config: HeadroomConfig,
-): HeadroomResult<TBody>["reason"] {
-  if (!config.enabled || config.mode === "off") return "disabled";
-  if (config.mode === "force") return "force";
+  messages: unknown[],
+): TBody {
+  return { ...body, messages } as TBody;
+}
 
-  const inputTokens = estimateTokens(body);
-  if (inputTokens >= config.minTokens) return "min_tokens";
+function compressedToolContent(messages: unknown[]): string | null {
+  const first = messages[0];
+  if (typeof first !== "object" || first === null) return null;
+  const content = (first as Record<string, unknown>)["content"];
+  return typeof content === "string" ? content : null;
+}
 
-  if (slot.contextWindowTokens) {
-    const totalTokens = inputTokens + maxOutputTokens(body);
-    if (totalTokens >= slot.contextWindowTokens * config.contextRatio) {
-      return "context_headroom";
+function openAITailTargets<TBody extends Record<string, unknown>>(
+  body: TBody,
+  config: TailCompressionConfig,
+): TailTarget<TBody>[] {
+  const messages = extractMessages(body);
+  if (!messages) return [];
+
+  return messages.flatMap((message, index): TailTarget<TBody>[] => {
+    if (typeof message !== "object" || message === null) return [];
+    const record = message as Record<string, unknown>;
+    if (record["role"] !== "tool" || typeof record["content"] !== "string") return [];
+    if (!isOversizedTail(record["content"], config)) return [];
+
+    const toolMessage: OpenAIToolMessage = {
+      role: "tool",
+      content: record["content"],
+    };
+    if (typeof record["tool_call_id"] === "string") {
+      toolMessage.tool_call_id = record["tool_call_id"];
+    }
+
+    return [{
+      originalChars: record["content"].length,
+      messages: [toolMessage],
+      apply: (currentBody, compressed) => {
+        const content = compressedToolContent(compressed);
+        if (!content) return null;
+        const currentMessages = extractMessages(currentBody);
+        if (!currentMessages) return null;
+        const nextMessages = [...currentMessages];
+        nextMessages[index] = { ...(nextMessages[index] as Record<string, unknown>), content };
+        return setMessages(currentBody, nextMessages);
+      },
+    }];
+  });
+}
+
+function anthropicTailTargets<TBody extends Record<string, unknown>>(
+  body: TBody,
+  config: TailCompressionConfig,
+): TailTarget<TBody>[] {
+  const messages = extractMessages(body);
+  if (!messages) return [];
+
+  const targets: TailTarget<TBody>[] = [];
+  messages.forEach((message, messageIndex) => {
+    if (typeof message !== "object" || message === null) return;
+    const record = message as Record<string, unknown>;
+    const content = record["content"];
+    if (!Array.isArray(content)) return;
+
+    content.forEach((part, partIndex) => {
+      if (typeof part !== "object" || part === null) return;
+      const block = part as Record<string, unknown>;
+      if (block["type"] !== "tool_result" || typeof block["content"] !== "string") return;
+      if (!isOversizedTail(block["content"], config)) return;
+
+      const toolMessage: OpenAIToolMessage = {
+        role: "tool",
+        content: block["content"],
+      };
+      if (typeof block["tool_use_id"] === "string") {
+        toolMessage.tool_call_id = block["tool_use_id"];
+      }
+
+      targets.push({
+        originalChars: block["content"].length,
+        messages: [toolMessage],
+        apply: (currentBody, compressed) => {
+          const compressedContent = compressedToolContent(compressed);
+          if (!compressedContent) return null;
+          const currentMessages = extractMessages(currentBody);
+          if (!currentMessages) return null;
+          const currentMessage = currentMessages[messageIndex];
+          if (typeof currentMessage !== "object" || currentMessage === null) return null;
+          const currentContent = (currentMessage as Record<string, unknown>)["content"];
+          if (!Array.isArray(currentContent)) return null;
+
+          const nextContent = [...currentContent];
+          nextContent[partIndex] = { ...(nextContent[partIndex] as Record<string, unknown>), content: compressedContent };
+          const nextMessages = [...currentMessages];
+          nextMessages[messageIndex] = { ...(currentMessage as Record<string, unknown>), content: nextContent };
+          return setMessages(currentBody, nextMessages);
+        },
+      });
+    });
+  });
+
+  return targets;
+}
+
+function tailTargets<TBody extends Record<string, unknown>>(
+  protocol: HeadroomProtocol,
+  body: TBody,
+  config: TailCompressionConfig,
+): TailTarget<TBody>[] {
+  if (protocol === "openai-chat") return openAITailTargets(body, config);
+  return anthropicTailTargets(body, config);
+}
+
+async function compressTargetsWithHeadroom<TBody extends Record<string, unknown>>(input: {
+  body: TBody;
+  slot: ModelSlot;
+  config: HeadroomConfig;
+  targets: TailTarget<TBody>[];
+}): Promise<HeadroomResult<TBody>> {
+  const traceEnabled = process.env["MINIROUTER_TRACE_LOG"] === "true";
+  let body = input.body;
+  let applied = false;
+  let originalChars = 0;
+  let compressedChars = 0;
+  let blocks = 0;
+
+  for (const target of input.targets) {
+    try {
+      if (traceEnabled) {
+        console.error(`[MiniRouter trace] headroom_tail_start chars=${target.originalChars}`);
+      }
+      const result = await compress(target.messages, {
+        model: input.slot.model,
+        baseUrl: input.config.url,
+        timeout: 15_000,
+        fallback: false,
+      });
+
+      if (!result.compressed || !result.messages) continue;
+      if (traceEnabled) {
+        console.error(`[MiniRouter trace] headroom_tail_done tokens=${result.tokensBefore}->${result.tokensAfter}`);
+      }
+      const nextBody = target.apply(body, result.messages);
+      if (!nextBody) continue;
+
+      body = nextBody;
+      applied = true;
+      originalChars += target.originalChars;
+      compressedChars += result.tokensAfter * 4;
+      blocks += Math.max(1, result.transformsApplied.length);
+    } catch (error) {
+      console.error("[MiniRouter] Headroom tail compress failed:", (error as Error).message);
     }
   }
 
-  return "short_request";
-}
-
-function optimizeUrl(baseUrl: string): string {
-  const trimmed = baseUrl.replace(/\/+$/, "");
-  if (trimmed.endsWith("/optimize")) return trimmed;
-  return `${trimmed}/optimize`;
-}
-
-function optimizeLocally<TBody extends Record<string, unknown>>(
-  protocol: HeadroomProtocol,
-  body: TBody,
-  config: HeadroomConfig,
-): HeadroomResult<TBody> | null {
-  const local = compressRequestTail({
-    protocol,
-    body,
-    config: config.tailCompression,
-  });
-  if (!local.applied) return null;
+  if (!applied) {
+    return { body: input.body, applied: false, reason: "no_compression" };
+  }
 
   console.error(
-    `[MiniRouter] local tail compression applied blocks=${local.compressedBlocks} chars=${local.originalChars}->${local.compressedChars}`,
+    `[MiniRouter] Headroom tail compression applied blocks=${blocks} chars=${originalChars}->${compressedChars}`,
   );
   return {
-    body: local.body,
+    body,
     applied: true,
-    reason: "local_tail_compression",
+    reason: "headroom_compress",
     compression: {
-      originalChars: local.originalChars,
-      compressedChars: local.compressedChars,
-      blocks: local.compressedBlocks,
+      originalChars,
+      compressedChars,
+      blocks,
     },
   };
+}
+
+async function compressFullWithHeadroom<TBody extends Record<string, unknown>>(input: {
+  body: TBody;
+  slot: ModelSlot;
+  config: HeadroomConfig;
+}): Promise<HeadroomResult<TBody>> {
+  const messages = extractMessages(input.body);
+  if (!input.config.url || !messages) {
+    return { body: input.body, applied: false, reason: "no_compression" };
+  }
+
+  try {
+    const result = await compress(messages, {
+      model: input.slot.model,
+      baseUrl: input.config.url,
+      timeout: 15_000,
+      fallback: false,
+    });
+
+    if (!result.compressed || !result.messages) {
+      return { body: input.body, applied: false, reason: "no_compression" };
+    }
+
+    return {
+      body: setMessages(input.body, result.messages),
+      applied: true,
+      reason: "headroom_compress",
+      compression: {
+        originalChars: result.tokensBefore * 4,
+        compressedChars: result.tokensAfter * 4,
+        blocks: result.transformsApplied.length,
+      },
+    };
+  } catch (error) {
+    console.error("[MiniRouter] Headroom full compress failed:", (error as Error).message);
+    return { body: input.body, applied: false, reason: "no_compression" };
+  }
 }
 
 export async function optimizeWithHeadroom<TBody extends Record<string, unknown>>(input: {
@@ -135,58 +316,39 @@ export async function optimizeWithHeadroom<TBody extends Record<string, unknown>
   body: TBody;
   slot: ModelSlot;
   config?: HeadroomConfig;
+  /** kept for API compatibility; headroom-ai handles HTTP */
   fetchImpl?: FetchLike;
 }): Promise<HeadroomResult<TBody>> {
   const config = input.config ?? loadHeadroomConfig();
-  const reason = shouldOptimize(input.body, input.slot, config);
 
-  if (reason === "disabled" || reason === "short_request") {
-    return { body: input.body, applied: false, reason };
+  if (!config.enabled || config.mode === "off") {
+    return { body: input.body, applied: false, reason: "disabled" };
+  }
+
+  if (config.mode === "force") {
+    return compressFullWithHeadroom({
+      body: input.body,
+      slot: input.slot,
+      config,
+    });
   }
 
   if (!config.url) {
-    const local = optimizeLocally(input.protocol, input.body, config);
-    if (local) return local;
-    return { body: input.body, applied: false, reason: "no_url" };
+    return { body: input.body, applied: false, reason: "no_compression" };
   }
 
-  let response: Response;
-  try {
-    response = await (input.fetchImpl ?? fetch)(optimizeUrl(config.url), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        protocol: input.protocol,
-        body: input.body,
-        slot: {
-          name: input.slot.slot,
-          model: input.slot.model,
-        },
-        policy: {
-          mode: config.mode,
-          reason,
-          protectStaticPrefix: true,
-          preserveNativeApiShape: true,
-        },
-      }),
-    });
-  } catch (error) {
-    const local = optimizeLocally(input.protocol, input.body, config);
-    if (local) return local;
-    console.error("[MiniRouter] Headroom request failed:", (error as Error).message);
-    return { body: input.body, applied: false, reason };
+  const targets = tailTargets(input.protocol, input.body, config.tailCompression);
+  if (process.env["MINIROUTER_TRACE_LOG"] === "true") {
+    console.error(`[MiniRouter trace] headroom_tail_targets=${targets.length}`);
+  }
+  if (targets.length === 0) {
+    return { body: input.body, applied: false, reason: "no_compression" };
   }
 
-  if (!response.ok) {
-    const local = optimizeLocally(input.protocol, input.body, config);
-    if (local) return local;
-    return { body: input.body, applied: false, reason };
-  }
-
-  const payload = (await response.json()) as { body?: TBody };
-  return {
-    body: payload.body ?? input.body,
-    applied: payload.body !== undefined,
-    reason,
-  };
+  return compressTargetsWithHeadroom({
+    body: input.body,
+    slot: input.slot,
+    config,
+    targets,
+  });
 }

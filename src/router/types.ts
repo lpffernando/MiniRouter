@@ -33,6 +33,22 @@ export type RoutingDecision = {
   tierConfigs?: Record<Tier, TierConfig>;
   /** Which routing profile was applied */
   profile?: "auto" | "eco" | "premium" | "agentic";
+  /**
+   * Routing audit data — the classifier's raw output before any post-hoc
+   * upgrades (intent/structured). Populated by RulesStrategy for debugging
+   * and persisted to usage_logs so any misroute can be reproduced after
+   * the fact. See docs/routing-strategy.md.
+   */
+  debug?: {
+    score: number; // weighted 14-dim score
+    tierRaw: Tier | null; // classifier tier before upgrades (null = ambiguous)
+    confidence: number; // sigmoid-calibrated
+    agenticScore: number; // 0-1
+    upgraded: boolean; // true if any post-classifier upgrade applied
+    upgradeReason?: string; // e.g. "explicit strong-model request" | "structured output"
+    signals: string[]; // dimension signal labels
+    dimensions: Array<{ name: string; score: number; signal: string | null }>;
+  };
 };
 
 export interface RouterStrategy {
@@ -42,6 +58,7 @@ export interface RouterStrategy {
     systemPrompt: string | undefined,
     maxOutputTokens: number,
     options: RouterOptions,
+    classifierText?: string,
   ): RoutingDecision;
 }
 

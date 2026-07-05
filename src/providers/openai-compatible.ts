@@ -64,8 +64,11 @@ export async function executeOpenAICompatibleChat(
   };
 
   debugLog("openai-chat:upstream body", upstreamBody);
+  if (process.env["MINIROUTER_TRACE_LOG"] === "true") {
+    console.error(`[MiniRouter trace] upstream_fetch_start slot=${slot.slot} model=${slot.model}`);
+  }
 
-  return fetchImpl(chatCompletionsUrl(slot.baseUrl), {
+  const response = await fetchImpl(chatCompletionsUrl(slot.baseUrl), {
     method: "POST",
     headers: {
       authorization: `Bearer ${slot.apiKey}`,
@@ -74,4 +77,8 @@ export async function executeOpenAICompatibleChat(
     body: JSON.stringify(upstreamBody),
     signal: AbortSignal.timeout(readTimeout()),
   });
+  if (process.env["MINIROUTER_TRACE_LOG"] === "true") {
+    console.error(`[MiniRouter trace] upstream_fetch_done status=${response.status}`);
+  }
+  return response;
 }
