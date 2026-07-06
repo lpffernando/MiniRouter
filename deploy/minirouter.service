@@ -1,0 +1,34 @@
+[Unit]
+Description=MiniRouter — Smart LLM Routing Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=minirouter
+Group=minirouter
+WorkingDirectory=/opt/minirouter
+
+# Run from the built dist (tsup bundles everything into serve.mjs)
+ExecStart=/usr/bin/node /opt/minirouter/dist/serve.mjs
+
+# Graceful shutdown
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Logging — journald, keep last 100M
+StandardOutput=journal
+StandardError=journal
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
