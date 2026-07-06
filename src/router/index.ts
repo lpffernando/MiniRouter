@@ -39,8 +39,9 @@ export {
   filterByExcludeList,
   calculateModelCost,
 } from "./selector.js";
-export { DEFAULT_ROUTING_CONFIG } from "./config.js";
-export type {
+ export { DEFAULT_ROUTING_CONFIG } from "./config.js";
+ export { getConfig } from "./config.js";
+ export type {
   RoutingDecision,
   Tier,
   RoutingConfig,

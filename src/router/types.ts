@@ -130,6 +130,13 @@ export type OverridesConfig = {
    * instead of stopping and waiting for user input.
    */
   agenticMode?: boolean;
+  /**
+   * When agenticMode is undefined (auto-detect), requests with an
+   * agenticScore at or above this threshold are routed through agentic
+   * tiers (if agenticTiers is configured). Lower value → more requests
+   * use agentic tiers. Default: 0.5
+   */
+  agenticScoreThreshold: number;
 };
 
 /**

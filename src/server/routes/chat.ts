@@ -8,7 +8,7 @@
 
 import type { Context } from "hono";
 import type { AuthResult } from "../../auth/types.js";
-import { route, DEFAULT_ROUTING_CONFIG } from "../../router/index.js";
+import { route, getConfig } from "../../router/index.js";
 import { buildModelPricing } from "../../router/utils.js";
 import { logUsage } from "../../db/queries/usage.js";
 import { randomUUID } from "node:crypto";
@@ -84,7 +84,7 @@ export function selectConfiguredSlotForChat(
   const modelParam: string = body.model ?? "minirouter/auto";
   const profile = routingProfile(modelParam, undefined);
   const decision = route(prompt, systemPrompt, request.maxOutputTokens, {
-    config: DEFAULT_ROUTING_CONFIG,
+    config: getConfig(),
     modelPricing: buildModelPricing(),
     routingProfile: profile,
     hasTools: features.requirements.toolCalling,

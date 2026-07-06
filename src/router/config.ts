@@ -1283,5 +1283,89 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
     ambiguousDefaultTier: "MEDIUM",
     // agenticMode left undefined → auto-detect via tools/agenticScore.
     // Set to `true` to force agentic tiers; `false` to disable them entirely.
+    agenticScoreThreshold: 0.5,
   },
 };
+/**
+ * Get routing config with env-var overrides applied.
+ * Call at startup (not per-request) — reads process.env once.
+ * Returns a shallow-merged copy of DEFAULT_ROUTING_CONFIG.
+ */
+export function getConfig(): RoutingConfig {
+  // --- Scoring scalars (env-var overrides) ---
+  const readNum = (key: string, fallback: number): number => {
+    const val = process.env[key];
+    if (val === undefined || val === "") return fallback;
+    const n = Number(val);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const readTier = (key: string, fallback: "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING"): "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING" => {
+    const val = process.env[key];
+    if (val === "SIMPLE" || val === "MEDIUM" || val === "COMPLEX" || val === "REASONING") return val;
+    return fallback;
+  };
+
+  const ct = readNum("MINIROUTER_CONFIDENCE_THRESHOLD", DEFAULT_ROUTING_CONFIG.scoring.confidenceThreshold);
+  const cs = readNum("MINIROUTER_CONFIDENCE_STEEPNESS", DEFAULT_ROUTING_CONFIG.scoring.confidenceSteepness);
+  const bSM = readNum("MINIROUTER_BOUNDARY_SIMPLE_MEDIUM", DEFAULT_ROUTING_CONFIG.scoring.tierBoundaries.simpleMedium);
+  const bMC = readNum("MINIROUTER_BOUNDARY_MEDIUM_COMPLEX", DEFAULT_ROUTING_CONFIG.scoring.tierBoundaries.mediumComplex);
+  const bCR = readNum("MINIROUTER_BOUNDARY_COMPLEX_REASONING", DEFAULT_ROUTING_CONFIG.scoring.tierBoundaries.complexReasoning);
+  const tCS = readNum("MINIROUTER_TOKEN_COUNT_SIMPLE", DEFAULT_ROUTING_CONFIG.scoring.tokenCountThresholds.simple);
+  const tCC = readNum("MINIROUTER_TOKEN_COUNT_COMPLEX", DEFAULT_ROUTING_CONFIG.scoring.tokenCountThresholds.complex);
+  const amb = readTier("MINIROUTER_AMBIGUOUS_DEFAULT_TIER", DEFAULT_ROUTING_CONFIG.overrides.ambiguousDefaultTier);
+  const soMT = readTier("MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER", DEFAULT_ROUTING_CONFIG.overrides.structuredOutputMinTier);
+  const agST = readNum("MINIROUTER_AGENTIC_SCORE_THRESHOLD", DEFAULT_ROUTING_CONFIG.overrides.agenticScoreThreshold);
+  const agMode = process.env["MINIROUTER_AGENTIC_MODE"];
+  const agenticMode: boolean | undefined =
+    agMode === "true" ? true : agMode === "false" ? false : undefined;
+
+  const changed =
+    ct !== DEFAULT_ROUTING_CONFIG.scoring.confidenceThreshold ||
+    cs !== DEFAULT_ROUTING_CONFIG.scoring.confidenceSteepness ||
+    bSM !== DEFAULT_ROUTING_CONFIG.scoring.tierBoundaries.simpleMedium ||
+    bMC !== DEFAULT_ROUTING_CONFIG.scoring.tierBoundaries.mediumComplex ||
+    bCR !== DEFAULT_ROUTING_CONFIG.scoring.tierBoundaries.complexReasoning ||
+    tCS !== DEFAULT_ROUTING_CONFIG.scoring.tokenCountThresholds.simple ||
+    tCC !== DEFAULT_ROUTING_CONFIG.scoring.tokenCountThresholds.complex ||
+    amb !== DEFAULT_ROUTING_CONFIG.overrides.ambiguousDefaultTier ||
+    soMT !== DEFAULT_ROUTING_CONFIG.overrides.structuredOutputMinTier ||
+    agST !== DEFAULT_ROUTING_CONFIG.overrides.agenticScoreThreshold ||
+    agenticMode !== undefined ||
+    process.env["MINIROUTER_DIMENSION_WEIGHTS"] !== undefined;
+
+  if (!changed) return DEFAULT_ROUTING_CONFIG;
+
+  return {
+    ...DEFAULT_ROUTING_CONFIG,
+    scoring: {
+      ...DEFAULT_ROUTING_CONFIG.scoring,
+      tokenCountThresholds: { simple: tCS, complex: tCC },
+      tierBoundaries: { simpleMedium: bSM, mediumComplex: bMC, complexReasoning: bCR },
+      confidenceThreshold: ct,
+      confidenceSteepness: cs,
+      dimensionWeights: process.env["MINIROUTER_DIMENSION_WEIGHTS"]
+        ? (() => {
+            try {
+              const parsed = JSON.parse(process.env["MINIROUTER_DIMENSION_WEIGHTS"]!);
+              // Validate it's an object with number values
+              if (typeof parsed !== "object" || parsed === null) return DEFAULT_ROUTING_CONFIG.scoring.dimensionWeights;
+              for (const v of Object.values(parsed)) {
+                if (typeof v !== "number") return DEFAULT_ROUTING_CONFIG.scoring.dimensionWeights;
+              }
+              return parsed as Record<string, number>;
+            } catch {
+              return DEFAULT_ROUTING_CONFIG.scoring.dimensionWeights;
+            }
+          })()
+        : DEFAULT_ROUTING_CONFIG.scoring.dimensionWeights,
+    },
+    overrides: {
+      ...DEFAULT_ROUTING_CONFIG.overrides,
+      ambiguousDefaultTier: amb,
+      structuredOutputMinTier: soMT,
+      agenticScoreThreshold: agST,
+      ...(agenticMode !== undefined ? { agenticMode } : {}),
+    },
+  };
+}
