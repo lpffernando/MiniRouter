@@ -10,13 +10,9 @@
  */
 
 import type { ModelSlot } from "../providers/types.js";
-import { compress } from "headroom-ai";
-import {
-  loadTailCompressionConfig,
-  type TailCompressionConfig,
-} from "./tail-compression.js";
-
-export type HeadroomMode = "off" | "adaptive" | "force";
+ import { compress } from "headroom-ai";
+ 
+ export type HeadroomMode = "off" | "adaptive" | "force";
 
 export type HeadroomConfig = {
   enabled: boolean;
@@ -70,13 +66,32 @@ function readMode(value: string | undefined): HeadroomMode {
   return "off";
 }
 
-function readNumber(value: string | undefined, fallback: number): number {
-  if (!value) return fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-export function loadHeadroomConfig(env: EnvLike = process.env): HeadroomConfig {
+ function readNumber(value: string | undefined, fallback: number): number {
+   if (!value) return fallback;
+   const parsed = Number(value);
+   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+ }
+ 
+ export type TailCompressionConfig = {
+   enabled: boolean;
+   minChars: number;
+   maxChars: number;
+ };
+ 
+ function readString(value: string | undefined, fallback: string): string {
+   if (!value) return fallback;
+   return value;
+ }
+ 
+ export function loadTailCompressionConfig(env: EnvLike = process.env): TailCompressionConfig {
+   return {
+     enabled: readBool(env["MINIROUTER_TAIL_COMPRESSION_ENABLED"]),
+     minChars: readNumber(env["MINIROUTER_TAIL_COMPRESSION_MIN_CHARS"], 12_000),
+     maxChars: readNumber(env["MINIROUTER_TAIL_COMPRESSION_MAX_CHARS"], 2_000),
+   };
+ }
+ 
+ export function loadHeadroomConfig(env: EnvLike = process.env): HeadroomConfig {
   const enabled = readBool(env["MINIROUTER_HEADROOM_ENABLED"]);
   const mode = enabled ? readMode(env["MINIROUTER_HEADROOM_MODE"] ?? "adaptive") : "off";
   return {
