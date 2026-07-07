@@ -9,9 +9,6 @@ export default defineConfig({
   sourcemap: true,
   target: "node22",
   splitting: false,
-  noExternal: [/.*/],
-  external: [...builtinModules.flatMap((m) => [m, `node:${m}`])],
-  banner: {
-    js: `import { createRequire as __cjs_createRequire } from 'node:module'; const require = __cjs_createRequire(import.meta.url);`,
-  },
+  noExternal: [/^(?!better-sqlite3).*/],
+  external: [...builtinModules.flatMap((m) => [m, `node:${m}`]), "better-sqlite3"],
 });

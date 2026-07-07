@@ -42,6 +42,7 @@ serve(
   {
     fetch: app.fetch,
     port: PROXY_PORT,
+    hostname: "0.0.0.0",
   },
   (info) => {
     console.log(`[MiniRouter] listening on http://localhost:${info.port}`);

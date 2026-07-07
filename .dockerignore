@@ -3,3 +3,14 @@ node_modules
 dist
 docs
 .claude
+.codex
+deploy
+*.md
+.gitignore
+.dockerignore
+.env*
+*.bat
+vitest.config.*
+eslint.config.*
+.prettierrc*
+tsconfig.json
