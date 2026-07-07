@@ -84,7 +84,10 @@ export async function runMigrations(): Promise<void> {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL REFERENCES users(id),
       api_key_id TEXT REFERENCES api_keys(id),
+      provider_instance_id TEXT,
       request_id TEXT NOT NULL,
+      requested_model TEXT,
+      selected_slot TEXT,
       model TEXT NOT NULL,
       tier TEXT,
       profile TEXT,
@@ -102,6 +105,7 @@ export async function runMigrations(): Promise<void> {
       is_streaming INTEGER DEFAULT 0,
       has_tools INTEGER DEFAULT 0,
       has_vision INTEGER DEFAULT 0,
+      has_agentic INTEGER DEFAULT 0,
       prompt_digest TEXT,
       optimization_reason TEXT,
       compression_applied INTEGER DEFAULT 0,
@@ -133,23 +137,49 @@ export async function runMigrations(): Promise<void> {
   addColumnIfMissing("usage_logs", "latency_ms", "latency_ms INTEGER");
   addColumnIfMissing("usage_logs", "first_token_ms", "first_token_ms INTEGER");
   addColumnIfMissing("usage_logs", "error_type", "error_type TEXT");
+  addColumnIfMissing("usage_logs", "provider_instance_id", "provider_instance_id TEXT");
+  addColumnIfMissing("usage_logs", "requested_model", "requested_model TEXT");
+  addColumnIfMissing("usage_logs", "selected_slot", "selected_slot TEXT");
+  addColumnIfMissing("usage_logs", "has_agentic", "has_agentic INTEGER DEFAULT 0");
 
   db.run(sql`
     CREATE TABLE IF NOT EXISTS provider_instances (
       id TEXT PRIMARY KEY,
+      slot TEXT NOT NULL DEFAULT 'balanced',
       model_id TEXT NOT NULL,
       provider TEXT NOT NULL,
+      provider_kind TEXT NOT NULL DEFAULT 'openai-compatible',
       endpoint_url TEXT NOT NULL,
+      api_key TEXT,
+      pricing_model_id TEXT,
       weight REAL NOT NULL DEFAULT 1.0,
+      supports_tools INTEGER NOT NULL DEFAULT 1,
+      supports_vision INTEGER NOT NULL DEFAULT 0,
+      context_window_tokens INTEGER,
       is_healthy INTEGER NOT NULL DEFAULT 1,
       last_health_check TEXT,
+      last_used_at TEXT,
+      cooldown_until TEXT,
       consecutive_failures INTEGER DEFAULT 0,
       avg_latency_ms REAL,
       p95_latency_ms REAL,
       error_rate REAL,
-      created_at TEXT NOT NULL
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT
     )
   `);
+  addColumnIfMissing("provider_instances", "slot", "slot TEXT NOT NULL DEFAULT 'balanced'");
+  addColumnIfMissing("provider_instances", "provider_kind", "provider_kind TEXT NOT NULL DEFAULT 'openai-compatible'");
+  addColumnIfMissing("provider_instances", "api_key", "api_key TEXT");
+  addColumnIfMissing("provider_instances", "pricing_model_id", "pricing_model_id TEXT");
+  addColumnIfMissing("provider_instances", "supports_tools", "supports_tools INTEGER NOT NULL DEFAULT 1");
+  addColumnIfMissing("provider_instances", "supports_vision", "supports_vision INTEGER NOT NULL DEFAULT 0");
+  addColumnIfMissing("provider_instances", "context_window_tokens", "context_window_tokens INTEGER");
+  addColumnIfMissing("provider_instances", "last_used_at", "last_used_at TEXT");
+  addColumnIfMissing("provider_instances", "cooldown_until", "cooldown_until TEXT");
+  addColumnIfMissing("provider_instances", "notes", "notes TEXT");
+  addColumnIfMissing("provider_instances", "updated_at", "updated_at TEXT");
 
   db.run(sql`
     CREATE TABLE IF NOT EXISTS routing_configs (

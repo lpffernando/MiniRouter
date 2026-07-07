@@ -9,7 +9,10 @@ import { eq, and, gte, lte, sql } from "drizzle-orm";
 export interface LogUsageInput {
   userId: string;
   apiKeyId?: string;
+  providerInstanceId?: string;
   requestId: string;
+  requestedModel?: string;
+  selectedSlot?: string;
   model: string;
   tier?: string;
   profile?: string;
@@ -27,6 +30,7 @@ export interface LogUsageInput {
   isStreaming?: boolean;
   hasTools?: boolean;
   hasVision?: boolean;
+  hasAgentic?: boolean;
   promptDigest?: string;
   optimizationReason?: string;
   compressionApplied?: boolean;
@@ -42,7 +46,10 @@ export async function logUsage(input: LogUsageInput): Promise<void> {
   await db.insert(usageLogs).values({
     userId: input.userId,
     apiKeyId: input.apiKeyId ?? null,
+    providerInstanceId: input.providerInstanceId ?? null,
     requestId: input.requestId,
+    requestedModel: input.requestedModel ?? null,
+    selectedSlot: input.selectedSlot ?? null,
     model: input.model,
     tier: input.tier ?? null,
     profile: input.profile ?? null,
@@ -60,6 +67,7 @@ export async function logUsage(input: LogUsageInput): Promise<void> {
     isStreaming: input.isStreaming ? 1 : 0,
     hasTools: input.hasTools ? 1 : 0,
     hasVision: input.hasVision ? 1 : 0,
+    hasAgentic: input.hasAgentic ? 1 : 0,
     promptDigest: input.promptDigest ?? null,
     optimizationReason: input.optimizationReason ?? null,
     compressionApplied: input.compressionApplied ? 1 : 0,

@@ -93,9 +93,12 @@ export const usageLogs = sqliteTable(
       .notNull()
       .references(() => users.id),
     apiKeyId: text("api_key_id").references(() => apiKeys.id),
+    providerInstanceId: text("provider_instance_id"),
 
     // Request
     requestId: text("request_id").notNull(), // UUID per request for dedup
+    requestedModel: text("requested_model"), // Client requested model, e.g. minirouter/eco
+    selectedSlot: text("selected_slot"), // fast | balanced | strong | vision
     model: text("model").notNull(), // Actual model used
     tier: text("tier"), // SIMPLE | MEDIUM | COMPLEX | REASONING
     profile: text("profile"), // eco | auto | premium
@@ -123,6 +126,7 @@ export const usageLogs = sqliteTable(
     isStreaming: integer("is_streaming").default(0), // boolean
     hasTools: integer("has_tools").default(0),
     hasVision: integer("has_vision").default(0),
+    hasAgentic: integer("has_agentic").default(0),
 
     // Prompt digest — last user message head (≤200 chars) for routing audit.
     // NULL for probe requests / tool-result-only messages.
@@ -158,22 +162,33 @@ export const usageLogs = sqliteTable(
 export const providerInstances = sqliteTable("provider_instances", {
   id: text("id").primaryKey(),
 
+  slot: text("slot").notNull().default("balanced"), // fast | balanced | strong | vision
   modelId: text("model_id").notNull(), // e.g. "google/gemini-2.5-flash"
   provider: text("provider").notNull(), // e.g. "blockrun", "openai-direct"
+  providerKind: text("provider_kind").notNull().default("openai-compatible"),
   endpointUrl: text("endpoint_url").notNull(),
+  apiKey: text("api_key"),
+  pricingModelId: text("pricing_model_id"),
   weight: real("weight").notNull().default(1.0),
+  supportsTools: integer("supports_tools").notNull().default(1),
+  supportsVision: integer("supports_vision").notNull().default(0),
+  contextWindowTokens: integer("context_window_tokens"),
 
   // Health
   isHealthy: integer("is_healthy").notNull().default(1),
   lastHealthCheck: text("last_health_check"),
+  lastUsedAt: text("last_used_at"),
+  cooldownUntil: text("cooldown_until"),
   consecutiveFailures: integer("consecutive_failures").default(0),
 
   // Performance
   avgLatencyMs: real("avg_latency_ms"),
   p95LatencyMs: real("p95_latency_ms"),
   errorRate: real("error_rate"),
+  notes: text("notes"),
 
   createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
 });
 
 // ─── Routing Configs ──────────────────────────────────────────────
