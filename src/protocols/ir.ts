@@ -26,6 +26,6 @@ export type CanonicalRequest = {
   responseFormat?: unknown;
   maxOutputTokens: number;
   stream: boolean;
+  metadata?: Record<string, unknown>;
   raw: unknown;
 };
-

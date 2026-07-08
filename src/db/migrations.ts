@@ -107,6 +107,11 @@ export async function runMigrations(): Promise<void> {
       has_vision INTEGER DEFAULT 0,
       has_agentic INTEGER DEFAULT 0,
       prompt_digest TEXT,
+      global_goal_digest TEXT,
+      current_step_digest TEXT,
+      step_type TEXT,
+      quality_hint TEXT,
+      call_intent_debug TEXT,
       optimization_reason TEXT,
       compression_applied INTEGER DEFAULT 0,
       compression_original_chars INTEGER DEFAULT 0,
@@ -141,6 +146,11 @@ export async function runMigrations(): Promise<void> {
   addColumnIfMissing("usage_logs", "requested_model", "requested_model TEXT");
   addColumnIfMissing("usage_logs", "selected_slot", "selected_slot TEXT");
   addColumnIfMissing("usage_logs", "has_agentic", "has_agentic INTEGER DEFAULT 0");
+  addColumnIfMissing("usage_logs", "global_goal_digest", "global_goal_digest TEXT");
+  addColumnIfMissing("usage_logs", "current_step_digest", "current_step_digest TEXT");
+  addColumnIfMissing("usage_logs", "step_type", "step_type TEXT");
+  addColumnIfMissing("usage_logs", "quality_hint", "quality_hint TEXT");
+  addColumnIfMissing("usage_logs", "call_intent_debug", "call_intent_debug TEXT");
 
   db.run(sql`
     CREATE TABLE IF NOT EXISTS provider_instances (

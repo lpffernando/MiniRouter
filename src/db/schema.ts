@@ -131,6 +131,11 @@ export const usageLogs = sqliteTable(
     // Prompt digest — last user message head (≤200 chars) for routing audit.
     // NULL for probe requests / tool-result-only messages.
     promptDigest: text("prompt_digest"),
+    globalGoalDigest: text("global_goal_digest"),
+    currentStepDigest: text("current_step_digest"),
+    stepType: text("step_type"),
+    qualityHint: text("quality_hint"),
+    callIntentDebug: text("call_intent_debug"),
 
     // Context optimization / tail compression metrics.
     optimizationReason: text("optimization_reason"),

@@ -62,5 +62,25 @@ describe("normalizeAnthropicMessagesRequest", () => {
     expect(features.requirements.video).toBe(true);
     expect(features.requirements.vision).toBe(true);
   });
+
+  it("preserves optional metadata for step-aware routing", () => {
+    const request = normalizeAnthropicMessagesRequest({
+      model: "minirouter/auto",
+      metadata: {
+        minirouter: {
+          step_type: "planning",
+          current_step: "design route policy",
+        },
+      },
+      messages: [{ role: "user", content: "ok" }],
+    });
+
+    expect(request.metadata).toEqual({
+      minirouter: {
+        step_type: "planning",
+        current_step: "design route policy",
+      },
+    });
+  });
 });
 

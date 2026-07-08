@@ -35,6 +35,11 @@ export interface UsageLogEntry {
   hasVision: boolean;
   hasAgentic: boolean;
   promptDigest: string | null;
+  globalGoalDigest: string | null;
+  currentStepDigest: string | null;
+  stepType: string | null;
+  qualityHint: string | null;
+  callIntentDebug: string | null;
   optimizationReason: string | null;
   compressionApplied: boolean;
   compressionOriginalChars: number;
@@ -114,6 +119,11 @@ export async function getUsageLogs(c: Context) {
     hasVision: !!r.hasVision,
     hasAgentic: !!r.hasAgentic,
     promptDigest: r.promptDigest ?? null,
+    globalGoalDigest: r.globalGoalDigest ?? null,
+    currentStepDigest: r.currentStepDigest ?? null,
+    stepType: r.stepType ?? null,
+    qualityHint: r.qualityHint ?? null,
+    callIntentDebug: r.callIntentDebug ?? null,
     optimizationReason: r.optimizationReason ?? null,
     compressionApplied: !!r.compressionApplied,
     compressionOriginalChars: Number(r.compressionOriginalChars ?? 0),

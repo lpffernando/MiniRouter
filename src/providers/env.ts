@@ -56,7 +56,7 @@ export function getSlotForRoutingModel(slots: ModelSlots, model: string): ModelS
 }
 
 function tierSlot(tier: Tier): ModelSlotName {
-  if (tier === "SIMPLE") return "balanced";
+  if (tier === "SIMPLE") return "fast";
   if (tier === "MEDIUM") return "balanced";
   return "strong";
 }
@@ -65,8 +65,8 @@ function tierSlot(tier: Tier): ModelSlotName {
  * Pick a model slot for the request.
  *
  * Profile semantics (see docs/routing-strategy.md):
- *   - auto     → tier → slot (14-dim score decides; SIMPLE/MEDIUM→balanced, COMPLEX/REASONING→strong)
- *   - eco      → balanced (flash) regardless of tier — cost-optimized
+ *   - auto     → tier → slot (14-dim score decides; SIMPLE→fast, MEDIUM→balanced, COMPLEX/REASONING→strong)
+ *   - eco      → fast regardless of tier — cost-optimized
  *   - premium  → strong (glm) regardless of tier — quality-optimized
  *
  * Vision requests always go to the vision slot first (for MiniCPM-V
@@ -94,7 +94,7 @@ export function pickSlotForFeatures(
 
   // Profile-driven slot selection (eco/premium override tier).
   const profileDefault: ModelSlotName | undefined =
-    input.profile === "eco" ? "balanced" : input.profile === "premium" ? "strong" : undefined;
+    input.profile === "eco" ? "fast" : input.profile === "premium" ? "strong" : undefined;
 
   const preferred: ModelSlotName[] = [];
   if (profileDefault) preferred.push(profileDefault);

@@ -11,7 +11,9 @@ import { executeAnthropicMessages } from "../../providers/anthropic.js";
 import type { ModelSlot } from "../../providers/types.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
 import { parseAnthropicUsage, toMutableUpstreamResponse } from "./chat.js";
-import { extractPromptDigest, extractLastUserText } from "../../routing/features/prompt-digest.js";
+import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
+import { extractCallIntent, type CallIntent } from "../../routing/features/call-intent.js";
+import { applyCallIntentTierPolicy } from "../../router/call-intent-policy.js";
 import { createSseUsageTap } from "../sse-usage-tap.js";
 import { estimateUsdCostForModel } from "../../router/cost.js";
 import { isSpendLimitExceeded } from "../../db/queries/spend.js";
@@ -21,7 +23,7 @@ import { selectProviderChannel } from "../../providers/channels.js";
 type EnvLike = Record<string, string | undefined>;
 type RoutedTier = "SIMPLE" | "MEDIUM" | "COMPLEX" | "REASONING";
 
-type SlotConfig = { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium"; effort?: string; debug: unknown; features: RoutingFeatures };
+type SlotConfig = { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium"; effort?: string; debug: unknown; features: RoutingFeatures; callIntent: CallIntent };
 type OptimizationLog = {
   reason?: string;
   compression?: {
@@ -59,7 +61,10 @@ function routingProfileFromModel(model: string): "auto" | "eco" | "premium" {
   return "auto";
 }
 
-function promptParts(request: ReturnType<typeof normalizeAnthropicMessagesRequest>): { prompt: string; systemPrompt?: string; classifierText?: string } {
+function promptParts(
+  request: ReturnType<typeof normalizeAnthropicMessagesRequest>,
+  classifierText?: string,
+): { prompt: string; systemPrompt?: string; classifierText?: string } {
   const prompt = request.messages
     .filter((message) => message.role !== "system")
     .flatMap((message) => message.content)
@@ -74,7 +79,6 @@ function promptParts(request: ReturnType<typeof normalizeAnthropicMessagesReques
     .join("\n");
   // ������ֻ����ǰ user turn �� ���򳤻Ựÿ�ֶ��������йؼ���,
   // ��Զ·�ɵ� REASONING��prompt ���������Ի���ʷ�� token ���㡣
-  const classifierText = extractLastUserText(request.messages) ?? undefined;
   return { prompt, systemPrompt: systemPrompt || undefined, classifierText };
 }
 
@@ -87,7 +91,8 @@ export function selectConfiguredSlotForAnthropicMessages(
 
   const request = normalizeAnthropicMessagesRequest(body);
   const features = extractRoutingFeatures(request);
-  const { prompt, systemPrompt, classifierText } = promptParts(request);
+  const callIntent = extractCallIntent(request);
+  const { prompt, systemPrompt, classifierText } = promptParts(request, callIntent.classifierText);
   const effort = readEffort(body);
   const modelParam = typeof body.model === "string" ? body.model : "minirouter/auto";
   const profile = routingProfileFromModel(modelParam);
@@ -98,6 +103,18 @@ export function selectConfiguredSlotForAnthropicMessages(
     hasTools: features.requirements.toolCalling,
     effort,
   }, classifierText);
+  const policy = applyCallIntentTierPolicy({ tier: decision.tier, callIntent, features });
+  const routedTier = policy.tier;
+  const debug = {
+    ...(typeof decision.debug === "object" && decision.debug !== null ? decision.debug : {}),
+    callIntentPolicy: {
+      tierBefore: decision.tier,
+      tierAfter: routedTier,
+      upgraded: policy.upgraded,
+      downgraded: policy.downgraded,
+      reason: policy.reason,
+    },
+  };
   const explicitSlot = getSlotForRoutingModel(slots, modelParam);
 
   if (explicitSlot) {
@@ -105,21 +122,22 @@ export function selectConfiguredSlotForAnthropicMessages(
       throw new Error("Explicit slot does not support tools");
     }
     return {
-      tier: decision.tier,
+      tier: routedTier,
       profile,
       effort,
       slot: explicitSlot,
-      debug: decision.debug ?? null,
+      debug,
       features,
+      callIntent,
     };
   }
 
   return {
-    tier: decision.tier,
+    tier: routedTier,
     profile,
     effort,
     slot: pickSlotForFeatures(slots, {
-      tier: decision.tier,
+      tier: routedTier,
       profile,
       requirements: {
         vision: features.requirements.vision,
@@ -127,8 +145,9 @@ export function selectConfiguredSlotForAnthropicMessages(
         agentic: features.requirements.agentic,
       },
     }),
-    debug: decision.debug ?? null,
+    debug,
     features,
+    callIntent,
   };
 }
 
@@ -236,6 +255,21 @@ function usageOptimizationFields(optimization: OptimizationLog) {
   };
 }
 
+function usageCallIntentFields(callIntent: CallIntent) {
+  return {
+    globalGoalDigest: callIntent.globalGoal ?? undefined,
+    currentStepDigest: callIntent.currentStep ?? undefined,
+    stepType: callIntent.stepType,
+    qualityHint: callIntent.qualityHint ?? undefined,
+    callIntentDebug: JSON.stringify({
+      source: callIntent.source,
+      confidence: callIntent.confidence,
+      signals: callIntent.signals,
+      classifierText: callIntent.classifierText,
+    }),
+  };
+}
+
 export async function anthropicMessages(c: Context) {
   const auth = c.get("auth") as AuthResult;
   let body = await c.req.json();
@@ -323,6 +357,7 @@ export async function anthropicMessages(c: Context) {
             hasVision: configured.features.requirements.vision,
             hasAgentic: configured.features.requirements.agentic,
             promptDigest: promptDigest ?? undefined,
+            ...usageCallIntentFields(configured.callIntent),
             ...usageOptimizationFields(optimization),
           }).catch((err) => {
             console.error("[MiniRouter] Failed to write stream usage log:", (err as Error).message);
@@ -377,6 +412,7 @@ export async function anthropicMessages(c: Context) {
       hasVision: configured.features.requirements.vision,
       hasAgentic: configured.features.requirements.agentic,
       promptDigest: promptDigest ?? undefined,
+      ...usageCallIntentFields(configured.callIntent),
       ...usageOptimizationFields(optimization),
     });
   } catch (err) {

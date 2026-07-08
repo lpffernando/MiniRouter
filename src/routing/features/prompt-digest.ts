@@ -29,10 +29,38 @@ export function extractPromptDigest(
     const text = extractTextFromContent(msg.content);
     if (!text) continue;
 
-    const digest = text.replace(/\s+/g, " ").trim().slice(0, MAX_DIGEST_CHARS);
+    const digest = cleanDigestText(text).replace(/\s+/g, " ").trim().slice(0, MAX_DIGEST_CHARS);
     return digest.length > 0 ? digest : null;
   }
   return null;
+}
+
+function cleanDigestText(text: string): string {
+  const withoutReminder = stripSystemReminderBlocks(text);
+  const lines = withoutReminder
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const filtered = lines.filter((line) => !isAgentBoilerplateLine(line));
+  return filtered.length > 0 ? filtered.join("\n") : withoutReminder;
+}
+
+function stripSystemReminderBlocks(text: string): string {
+  return text
+    .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/gi, "\n")
+    .replace(/<system-reminder>[\s\S]*$/gi, "\n");
+}
+
+function isAgentBoilerplateLine(line: string): boolean {
+  const normalized = line.toLowerCase();
+  const windowsPath = normalized.replace(/\//g, "\\");
+  return (
+    normalized.startsWith("base directory for this skill:") ||
+    normalized.includes("/local-agent-mode-sessions/") ||
+    windowsPath.includes("\\local-agent-mode-sessions\\") ||
+    /^[a-z]:\\users\\[^\\]+\\appdata\\local\\/i.test(windowsPath) ||
+    /^base directory:/i.test(line)
+  );
 }
 
 function extractTextFromContent(content: unknown): string {

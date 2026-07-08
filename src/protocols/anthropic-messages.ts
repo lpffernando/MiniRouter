@@ -18,6 +18,7 @@ type AnthropicMessagesRequest = {
   tool_choice?: unknown;
   max_tokens?: number;
   stream?: boolean;
+  metadata?: Record<string, unknown>;
 };
 
 function normalizeContent(content: AnthropicMessage["content"]): CanonicalContentBlock[] {
@@ -76,6 +77,7 @@ export function normalizeAnthropicMessagesRequest(body: AnthropicMessagesRequest
     toolChoice: body.tool_choice,
     maxOutputTokens: body.max_tokens ?? 4096,
     stream: body.stream === true,
+    metadata: body.metadata,
     raw: body,
   };
 }

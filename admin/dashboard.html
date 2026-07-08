@@ -357,7 +357,7 @@
       </div>
       <div class="table-wrap" style="max-height:520px">
         <table>
-          <thead><tr><th>Time</th><th>Route</th><th>Status</th><th>Tokens</th><th>Cost</th><th>Latency</th><th>User Message</th><th>Details</th></tr></thead>
+          <thead><tr><th>Time</th><th>Route</th><th>Status</th><th>Tokens</th><th>Cost</th><th>Latency</th><th>Step</th><th>User Message</th><th>Details</th></tr></thead>
           <tbody id="logs"><tr><td colspan="7" class="muted">No usage loaded.</td></tr></tbody>
         </table>
       </div>
@@ -474,6 +474,7 @@ function debugSignals(debug) {
 }
 function logDetails(l) {
   const debug = parseRoutingDebug(l.routingDebug);
+  const callIntentDebug = parseRoutingDebug(l.callIntentDebug);
   const featureFlags = [
     l.hasTools ? "tools" : null,
     l.hasVision ? "vision" : null,
@@ -481,9 +482,10 @@ function logDetails(l) {
     l.isStreaming ? "stream" : null,
   ].filter(Boolean).join(", ") || "none";
   const debugText = debug ? JSON.stringify(debug, null, 2) : (l.routingDebug || "No routing debug stored.");
+  const callIntentSignals = Array.isArray(callIntentDebug?.signals) ? callIntentDebug.signals.join(", ") : "-";
   return `
     <tr id="logDetail-${l.id}" class="details-row hidden">
-      <td colspan="8">
+      <td colspan="9">
         <div class="route-detail">
           <div class="detail-grid">
             <div class="detail-box"><div class="label">Entry Model</div><div>${escapeHtml(l.requestedModel || "-")}</div></div>
@@ -494,6 +496,20 @@ function logDetails(l) {
             <div class="detail-box"><div class="label">Routing Score</div><div>${escapeHtml(debugScore(debug))}</div></div>
             <div class="detail-box"><div class="label">Features</div><div>${escapeHtml(featureFlags)}</div></div>
             <div class="detail-box"><div class="label">Effort</div><div>${escapeHtml(l.effort || "-")}</div></div>
+            <div class="detail-box"><div class="label">Step Type</div><div>${escapeHtml(l.stepType || "-")}</div></div>
+            <div class="detail-box"><div class="label">Quality Hint</div><div>${escapeHtml(l.qualityHint || "-")}</div></div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Global Goal</div>
+            <div>${escapeHtml(l.globalGoalDigest || "-")}</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Current Step</div>
+            <div>${escapeHtml(l.currentStepDigest || "-")}</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Call Intent Signals</div>
+            <div>${escapeHtml(callIntentSignals)}</div>
           </div>
           <div class="detail-box">
             <div class="label">Rule Signals</div>
@@ -656,10 +672,11 @@ async function loadLogs() {
       <td class="mono">${Number(l.inputTokens)}/${Number(l.outputTokens)}</td>
       <td class="mono">${money(l.costUsd)}</td>
       <td class="mono">${l.latencyMs ?? "-"}</td>
+      <td>${escapeHtml(l.stepType || "-")}</td>
       <td title="Last user text, truncated to 200 chars">${escapeHtml(l.promptDigest || "(no text user message)")}</td>
       <td><button class="secondary" onclick="toggleLogDetails(${Number(l.id)})">Route</button></td>
     </tr>
-    ${logDetails(l)}`).join("") || '<tr><td colspan="8" class="muted">No usage logs.</td></tr>';
+    ${logDetails(l)}`).join("") || '<tr><td colspan="9" class="muted">No usage logs.</td></tr>';
 }
 async function refreshAll() {
   try {

@@ -32,6 +32,11 @@ export interface LogUsageInput {
   hasVision?: boolean;
   hasAgentic?: boolean;
   promptDigest?: string;
+  globalGoalDigest?: string;
+  currentStepDigest?: string;
+  stepType?: string;
+  qualityHint?: string;
+  callIntentDebug?: string;
   optimizationReason?: string;
   compressionApplied?: boolean;
   compressionOriginalChars?: number;
@@ -69,6 +74,11 @@ export async function logUsage(input: LogUsageInput): Promise<void> {
     hasVision: input.hasVision ? 1 : 0,
     hasAgentic: input.hasAgentic ? 1 : 0,
     promptDigest: input.promptDigest ?? null,
+    globalGoalDigest: input.globalGoalDigest ?? null,
+    currentStepDigest: input.currentStepDigest ?? null,
+    stepType: input.stepType ?? null,
+    qualityHint: input.qualityHint ?? null,
+    callIntentDebug: input.callIntentDebug ?? null,
     optimizationReason: input.optimizationReason ?? null,
     compressionApplied: input.compressionApplied ? 1 : 0,
     compressionOriginalChars: input.compressionOriginalChars ?? 0,

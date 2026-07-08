@@ -64,6 +64,7 @@ export function buildEnvSlotDebugReceipt(body: any, env: EnvLike = process.env) 
     protocol: "openai-chat" as const,
     tier: configured.tier,
     features,
+    callIntent: configured.callIntent,
     selectedSlot: {
       slot: configured.slot.slot,
       provider: configured.slot.provider,

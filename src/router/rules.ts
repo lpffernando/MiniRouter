@@ -36,7 +36,7 @@ function scoreKeywordMatch(
   thresholds: { low: number; high: number },
   scores: { none: number; low: number; high: number },
 ): DimensionScore {
-  const matches = keywords.filter((kw) => text.includes(kw.toLowerCase()));
+  const matches = keywords.filter((kw) => matchesKeyword(text, kw));
   if (matches.length >= thresholds.high) {
     return {
       name,
@@ -52,6 +52,20 @@ function scoreKeywordMatch(
     };
   }
   return { name, score: scores.none, signal: null };
+}
+
+function matchesKeyword(text: string, keyword: string): boolean {
+  const normalized = keyword.toLowerCase();
+  // Tiny ASCII keywords such as "ok" should match as standalone tokens only.
+  // Otherwise "look at" accidentally becomes a SIMPLE signal.
+  if (/^[a-z0-9]{1,3}$/.test(normalized)) {
+    return new RegExp(`(^|[^a-z0-9])${escapeRegex(normalized)}($|[^a-z0-9])`).test(text);
+  }
+  return text.includes(normalized);
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function scoreMultiStep(text: string): DimensionScore {

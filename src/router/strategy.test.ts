@@ -135,6 +135,13 @@ describe("RulesStrategy", () => {
     expect(decision.tierConfigs).toEqual(DEFAULT_ROUTING_CONFIG.tiers);
   });
 
+  it("does not treat ok as a substring match inside look at", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route("look at this file", undefined, 100, baseOptions);
+
+    expect(decision.debug?.signals).not.toContain("simple (ok)");
+  });
+
   it("effort:high does NOT override tier (high is API default, Claude Code sends it always)", () => {
     const strategy = new RulesStrategy();
     const decision = strategy.route("hi", undefined, 100, {
@@ -192,6 +199,36 @@ describe("RulesStrategy", () => {
 
     expect(decision.tier).toBe("COMPLEX");
     expect(decision.reasoning).toContain("explicit strong-model request");
+  });
+
+  it("recognizes Chinese strong-model intent without relying on mojibake literals", () => {
+    const strategy = new RulesStrategy();
+    const decision = strategy.route(
+      "\u8fd9\u4e2a\u4efb\u52a1\u6bd4\u8f83\u96be\uff0c\u7528\u9ad8\u667a\u6a21\u578b\u6df1\u5ea6\u5206\u6790",
+      undefined,
+      4096,
+      {
+        ...baseOptions,
+        hasTools: true,
+      },
+    );
+
+    expect(decision.tier).toBe("COMPLEX");
+    expect(decision.reasoning).toContain("explicit strong-model request");
+  });
+
+  it("upgrades long agentic tool requests to the strong tier", () => {
+    const strategy = new RulesStrategy();
+    const longPrompt =
+      "look at the code, check the route, fix the issue, iterate, make sure it works. " +
+      "context ".repeat(70000);
+    const decision = strategy.route(longPrompt, undefined, 4096, {
+      ...baseOptions,
+      hasTools: true,
+    });
+
+    expect(decision.tier).toBe("COMPLEX");
+    expect(decision.reasoning).toContain("long agentic tool request");
   });
 
   it("sets auto profile for default requests", () => {

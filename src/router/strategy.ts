@@ -75,6 +75,24 @@ function hasExplicitStrongModelIntent(prompt: string): boolean {
   );
 }
 
+function hasStrongModelIntent(prompt: string): boolean {
+  const normalized = prompt.toLowerCase();
+  const intentPhrases = [
+    "\u9ad8\u667a",
+    "\u5f3a\u6a21\u578b",
+    "\u6700\u5f3a\u6a21\u578b",
+    "\u66f4\u5f3a\u7684\u6a21\u578b",
+    "\u9ad8\u8d28\u91cf\u6a21\u578b",
+    "\u6df1\u5ea6\u5206\u6790",
+    "\u590d\u6742\u63a8\u7406",
+    "strong model",
+    "smarter model",
+    "premium model",
+    "stronger model",
+  ];
+  return intentPhrases.some((phrase) => normalized.includes(phrase));
+}
+
 /**
  * Rules-based routing strategy.
  * Extracted from the original route() in index.ts — logic is identical.
@@ -189,7 +207,7 @@ export class RulesStrategy implements RouterStrategy {
       upgradeReason = `ambiguous -> default ${tier}`;
     }
 
-    if (hasExplicitStrongModelIntent(classifierInput)) {
+    if (hasExplicitStrongModelIntent(classifierInput) || hasStrongModelIntent(classifierInput)) {
       const tierRank: Record<Tier, number> = { SIMPLE: 0, MEDIUM: 1, COMPLEX: 2, REASONING: 3 };
       if (tierRank[tier] < tierRank.COMPLEX) {
         tier = "COMPLEX";
@@ -198,6 +216,23 @@ export class RulesStrategy implements RouterStrategy {
         upgraded = true;
         upgradeReason = "explicit strong-model request";
       }
+    }
+
+    const longAgenticToolRequest =
+      options.hasTools === true &&
+      (ruleResult.agenticScore ?? 0) >= config.overrides.agenticScoreThreshold &&
+      estimatedTokens >= 16000;
+    if (longAgenticToolRequest) {
+      const tierRank: Record<Tier, number> = { SIMPLE: 0, MEDIUM: 1, COMPLEX: 2, REASONING: 3 };
+      if (tierRank[tier] < tierRank.COMPLEX) {
+        tier = "COMPLEX";
+        reasoning += " | upgraded to COMPLEX (long agentic tool request)";
+        upgraded = true;
+        upgradeReason = upgradeReason
+          ? `${upgradeReason} + long agentic tool request`
+          : "long agentic tool request";
+      }
+      confidence = Math.max(confidence, 0.75);
     }
 
     // Apply structured output minimum tier

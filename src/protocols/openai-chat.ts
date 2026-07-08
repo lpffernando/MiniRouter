@@ -19,6 +19,7 @@ type OpenAIChatRequest = {
   max_tokens?: number;
   max_completion_tokens?: number;
   stream?: boolean;
+  metadata?: Record<string, unknown>;
 };
 
 function normalizeContent(content: OpenAIChatMessage["content"]): CanonicalContentBlock[] {
@@ -90,7 +91,7 @@ export function normalizeOpenAIChatRequest(body: OpenAIChatRequest): CanonicalRe
     responseFormat: body.response_format,
     maxOutputTokens: body.max_tokens ?? body.max_completion_tokens ?? 4096,
     stream: body.stream === true,
+    metadata: body.metadata,
     raw: body,
   };
 }
-

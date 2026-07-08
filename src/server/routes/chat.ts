@@ -18,7 +18,9 @@ import { getSlotForRoutingModel, loadModelSlotsFromEnv, pickSlotForFeatures } fr
 import type { ModelSlot } from "../../providers/types.js";
 import { executeOpenAICompatibleChat } from "../../providers/openai-compatible.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
-import { extractPromptDigest, extractLastUserText } from "../../routing/features/prompt-digest.js";
+import { extractPromptDigest } from "../../routing/features/prompt-digest.js";
+import { extractCallIntent, type CallIntent } from "../../routing/features/call-intent.js";
+import { applyCallIntentTierPolicy } from "../../router/call-intent-policy.js";
 import { createSseUsageTap } from "../sse-usage-tap.js";
 import { estimateUsdCostForModel } from "../../router/cost.js";
 import { isSpendLimitExceeded } from "../../db/queries/spend.js";
@@ -51,8 +53,10 @@ function readEffort(body: any): "low" | "medium" | "high" | "xhigh" | "max" | un
     : undefined;
 }
 
-function getPromptParts(body: any): { prompt: string; systemPrompt?: string; classifierText?: string } {
-  const request = normalizeOpenAIChatRequest(body);
+function getPromptParts(
+  request: ReturnType<typeof normalizeOpenAIChatRequest>,
+  classifierText?: string,
+): { prompt: string; systemPrompt?: string; classifierText?: string } {
   const prompt = request.messages
     .filter((message) => message.role !== "system")
     .flatMap((message) => message.content)
@@ -67,7 +71,6 @@ function getPromptParts(body: any): { prompt: string; systemPrompt?: string; cla
     .join("\n");
   // 分类器只看当前 user turn — 避免长会话每轮都命中所有关键词
   // 导致永远路由到 REASONING。prompt 仍用完整对话历史做 token 估算。
-  const classifierText = extractLastUserText(request.messages) ?? undefined;
   return { prompt, systemPrompt: systemPrompt || undefined, classifierText };
 }
 
@@ -78,13 +81,14 @@ export function slotCanServeOpenAIChat(slot: ModelSlot): boolean {
 export function selectConfiguredSlotForChat(
   body: any,
   env: EnvLike = process.env,
-): { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium" | undefined; effort?: string; debug: unknown } | null {
+): { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium" | undefined; effort?: string; debug: unknown; callIntent: CallIntent } | null {
   const slots = loadModelSlotsFromEnv(env);
   if (Object.keys(slots).length === 0) return null;
 
   const request = normalizeOpenAIChatRequest(body);
   const features = extractRoutingFeatures(request);
-  const { prompt, systemPrompt, classifierText } = getPromptParts(body);
+  const callIntent = extractCallIntent(request);
+  const { prompt, systemPrompt, classifierText } = getPromptParts(request, callIntent.classifierText);
   const effort = readEffort(body);
   const modelParam: string = body.model ?? "minirouter/auto";
   const profile = routingProfile(modelParam, undefined);
@@ -95,6 +99,18 @@ export function selectConfiguredSlotForChat(
     hasTools: features.requirements.toolCalling,
     effort,
   }, classifierText);
+  const policy = applyCallIntentTierPolicy({ tier: decision.tier, callIntent, features });
+  const routedTier = policy.tier;
+  const debug = {
+    ...(typeof decision.debug === "object" && decision.debug !== null ? decision.debug : {}),
+    callIntentPolicy: {
+      tierBefore: decision.tier,
+      tierAfter: routedTier,
+      upgraded: policy.upgraded,
+      downgraded: policy.downgraded,
+      reason: policy.reason,
+    },
+  };
   const explicitSlot = getSlotForRoutingModel(slots, modelParam);
 
   if (explicitSlot) {
@@ -102,20 +118,21 @@ export function selectConfiguredSlotForChat(
       throw new Error("Explicit slot does not support tools");
     }
     return {
-      tier: decision.tier,
+      tier: routedTier,
       profile,
       effort,
       slot: explicitSlot,
-      debug: decision.debug ?? null,
+      debug,
+      callIntent,
     };
   }
 
   return {
-    tier: decision.tier,
+    tier: routedTier,
     profile,
     effort,
     slot: pickSlotForFeatures(slots, {
-      tier: decision.tier,
+      tier: routedTier,
       profile,
       requirements: {
         vision: features.requirements.vision,
@@ -123,7 +140,8 @@ export function selectConfiguredSlotForChat(
         agentic: features.requirements.agentic,
       },
     }),
-    debug: decision.debug ?? null,
+    debug,
+    callIntent,
   };
 }
 
@@ -201,6 +219,21 @@ function usageOptimizationFields(optimization: OptimizationLog) {
     compressionOriginalChars: optimization.compression?.originalChars,
     compressionCompressedChars: optimization.compression?.compressedChars,
     compressionBlocks: optimization.compression?.blocks,
+  };
+}
+
+function usageCallIntentFields(callIntent: CallIntent) {
+  return {
+    globalGoalDigest: callIntent.globalGoal ?? undefined,
+    currentStepDigest: callIntent.currentStep ?? undefined,
+    stepType: callIntent.stepType,
+    qualityHint: callIntent.qualityHint ?? undefined,
+    callIntentDebug: JSON.stringify({
+      source: callIntent.source,
+      confidence: callIntent.confidence,
+      signals: callIntent.signals,
+      classifierText: callIntent.classifierText,
+    }),
   };
 }
 
@@ -356,7 +389,7 @@ export async function chatCompletions(c: Context) {
     );
   }
 
-  let configured: { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium" | undefined; effort?: string; debug: unknown } | null;
+  let configured: { slot: ModelSlot; tier: RoutedTier; profile: "auto" | "eco" | "premium" | undefined; effort?: string; debug: unknown; callIntent: CallIntent } | null;
   try {
     trace("select_slot_start");
     configured = selectConfiguredSlotForChat(body);
@@ -440,6 +473,7 @@ export async function chatCompletions(c: Context) {
             hasVision: features.requirements.vision,
             hasAgentic: features.requirements.agentic,
             promptDigest: extractPromptDigest(request.messages) ?? undefined,
+            ...usageCallIntentFields(configured.callIntent),
             ...usageOptimizationFields(optimization),
           }).catch((err) => {
             console.error("[MiniRouter] Failed to write stream usage log:", (err as Error).message);
@@ -494,6 +528,7 @@ export async function chatCompletions(c: Context) {
       hasVision: features.requirements.vision,
       hasAgentic: features.requirements.agentic,
       promptDigest: extractPromptDigest(request.messages) ?? undefined,
+      ...usageCallIntentFields(configured.callIntent),
       ...usageOptimizationFields(optimization),
     });
   } catch (err) {

@@ -67,9 +67,12 @@ describe("buildEnvSlotDebugReceipt", () => {
         messages: [{ role: "user", content: "summarize this short note" }],
       },
       {
+        MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
+        MINIROUTER_FAST_API_KEY: "fast-key",
+        MINIROUTER_FAST_MODEL: "deepseek-v4-flash",
         MINIROUTER_BALANCED_BASE_URL: "https://api.example.com/v1",
         MINIROUTER_BALANCED_API_KEY: "balanced-key",
-        MINIROUTER_BALANCED_MODEL: "deepseek-v4-flash",
+        MINIROUTER_BALANCED_MODEL: "deepseek/v4-pro",
         MINIROUTER_STRONG_BASE_URL: "https://api.example.com/v1",
         MINIROUTER_STRONG_API_KEY: "strong-key",
         MINIROUTER_STRONG_MODEL: "glm-5.2",
@@ -84,10 +87,48 @@ describe("buildEnvSlotDebugReceipt", () => {
     const selectedSlot = "selectedSlot" in receipt ? receipt.selectedSlot : undefined;
     expect(selectedSlot).toBeDefined();
     if (!selectedSlot) throw new Error("expected selectedSlot");
-    expect(selectedSlot.slot).toBe("balanced");
+    expect(selectedSlot.slot).toBe("fast");
     expect(selectedSlot.model).toBe("deepseek-v4-flash");
     expect(receipt.tier).toBe("SIMPLE");
     expect(receipt.features.requirements.vision).toBe(false);
+    const callIntent = "callIntent" in receipt ? receipt.callIntent : undefined;
+    expect(callIntent?.stepType).toBe("unknown");
+  });
+
+  it("includes call intent and routes final synthesis metadata to strong", () => {
+    const receipt = buildEnvSlotDebugReceipt(
+      {
+        model: "minirouter/auto",
+        metadata: {
+          minirouter: {
+            global_goal: "分析今天调用",
+            current_step: "生成最终业务结论",
+            step_type: "final_synthesis",
+          },
+        },
+        messages: [{ role: "user", content: "ok" }],
+      },
+      {
+        MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
+        MINIROUTER_FAST_API_KEY: "fast-key",
+        MINIROUTER_FAST_MODEL: "deepseek-v4-flash",
+        MINIROUTER_BALANCED_BASE_URL: "https://api.example.com/v1",
+        MINIROUTER_BALANCED_API_KEY: "balanced-key",
+        MINIROUTER_BALANCED_MODEL: "deepseek/v4-pro",
+        MINIROUTER_STRONG_BASE_URL: "https://api.example.com/v1",
+        MINIROUTER_STRONG_API_KEY: "strong-key",
+        MINIROUTER_STRONG_MODEL: "glm-5.2",
+      },
+    );
+
+    expect(receipt.tier).toBe("COMPLEX");
+    expect(receipt.callIntent).toMatchObject({
+      source: "metadata",
+      stepType: "final_synthesis",
+      currentStep: "生成最终业务结论",
+    });
+    const selectedSlot = "selectedSlot" in receipt ? receipt.selectedSlot : undefined;
+    expect(selectedSlot?.slot).toBe("strong");
   });
 
   it("reports missing env slots instead of reading the model database", () => {

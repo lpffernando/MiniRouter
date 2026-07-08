@@ -68,16 +68,16 @@ describe("pickSlotForFeatures", () => {
     expect(selected.model).toBe("deepseek-v4-flash");
   });
 
-  it("keeps fast reserved and uses balanced for automatic simple requests even when fast is configured", () => {
+  it("uses fast for automatic simple requests when fast is configured", () => {
     const slots = loadModelSlotsFromEnv({
       MINIROUTER_FAST_PROVIDER: "openai-compatible",
       MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_FAST_API_KEY: "fast-key",
-      MINIROUTER_FAST_MODEL: "glm-4.7-flash",
+      MINIROUTER_FAST_MODEL: "deepseek-v4-flash",
       MINIROUTER_BALANCED_PROVIDER: "openai-compatible",
       MINIROUTER_BALANCED_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_BALANCED_API_KEY: "balanced-key",
-      MINIROUTER_BALANCED_MODEL: "deepseek-v4-flash",
+      MINIROUTER_BALANCED_MODEL: "deepseek/v4-pro",
     });
 
     const selected = pickSlotForFeatures(slots, {
@@ -89,7 +89,7 @@ describe("pickSlotForFeatures", () => {
       },
     });
 
-    expect(selected.slot).toBe("balanced");
+    expect(selected.slot).toBe("fast");
     expect(selected.model).toBe("deepseek-v4-flash");
   });
 
@@ -98,11 +98,11 @@ describe("pickSlotForFeatures", () => {
       MINIROUTER_FAST_PROVIDER: "openai-compatible",
       MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_FAST_API_KEY: "fast-key",
-      MINIROUTER_FAST_MODEL: "glm-4.7-flash",
+      MINIROUTER_FAST_MODEL: "deepseek-v4-flash",
       MINIROUTER_BALANCED_PROVIDER: "openai-compatible",
       MINIROUTER_BALANCED_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_BALANCED_API_KEY: "balanced-key",
-      MINIROUTER_BALANCED_MODEL: "deepseek-v4-flash",
+      MINIROUTER_BALANCED_MODEL: "deepseek/v4-pro",
       MINIROUTER_VISION_PROVIDER: "openai-compatible",
       MINIROUTER_VISION_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_VISION_API_KEY: "vision-key",
@@ -118,7 +118,7 @@ describe("pickSlotForFeatures", () => {
       },
     });
 
-    expect(selected.slot).toBe("balanced");
+    expect(selected.slot).toBe("fast");
     expect(selected.model).toBe("deepseek-v4-flash");
   });
 
@@ -160,12 +160,12 @@ describe("pickSlotForFeatures", () => {
       MINIROUTER_FAST_PROVIDER: "openai-compatible",
       MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_FAST_API_KEY: "fast-key",
-      MINIROUTER_FAST_MODEL: "glm-4.7-flash",
+      MINIROUTER_FAST_MODEL: "deepseek-v4-flash",
       MINIROUTER_FAST_SUPPORTS_TOOLS: "false",
       MINIROUTER_BALANCED_PROVIDER: "openai-compatible",
       MINIROUTER_BALANCED_BASE_URL: "https://api.example.com/v1",
       MINIROUTER_BALANCED_API_KEY: "balanced-key",
-      MINIROUTER_BALANCED_MODEL: "deepseek-v4-flash",
+      MINIROUTER_BALANCED_MODEL: "deepseek/v4-pro",
       MINIROUTER_BALANCED_SUPPORTS_TOOLS: "true",
     });
 
@@ -179,7 +179,7 @@ describe("pickSlotForFeatures", () => {
     });
 
     expect(selected.slot).toBe("balanced");
-    expect(selected.model).toBe("deepseek-v4-flash");
+    expect(selected.model).toBe("deepseek/v4-pro");
   });
 
   it("routes reasoning requests to the strong slot", () => {

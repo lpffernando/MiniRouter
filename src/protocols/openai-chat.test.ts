@@ -42,4 +42,24 @@ describe("normalizeOpenAIChatRequest", () => {
     expect(features.requirements.jsonMode).toBe(true);
     expect(features.promptText).toContain("Describe this UI");
   });
+
+  it("preserves optional metadata for step-aware routing", () => {
+    const request = normalizeOpenAIChatRequest({
+      model: "minirouter/auto",
+      metadata: {
+        minirouter: {
+          step_type: "final_synthesis",
+          current_step: "write final conclusion",
+        },
+      },
+      messages: [{ role: "user", content: "ok" }],
+    });
+
+    expect(request.metadata).toEqual({
+      minirouter: {
+        step_type: "final_synthesis",
+        current_step: "write final conclusion",
+      },
+    });
+  });
 });
