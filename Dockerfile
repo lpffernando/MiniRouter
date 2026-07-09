@@ -29,6 +29,10 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist/serve.js ./dist/serve.mjs
 COPY models/ ./models/
+# 把 去密钥的路由调参文件 打进镜像为 /app/.env, 使重新打包后边界/调参依然生效
+# (loadDotEnv 读 /app/.env; 运行时 -e 注入的密钥/provider 变量会覆盖同名项, 故此处不冲突)
+# 注意: 绝不 COPY 含密钥的 .env, 密钥只通过运行时 -e 提供
+COPY .env.tuning /app/.env
 
 RUN mkdir -p /data/.minirouter
 

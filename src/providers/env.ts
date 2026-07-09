@@ -56,7 +56,7 @@ export function getSlotForRoutingModel(slots: ModelSlots, model: string): ModelS
 }
 
 function tierSlot(tier: Tier): ModelSlotName {
-  if (tier === "SIMPLE") return "balanced";
+  if (tier === "SIMPLE") return "fast";
   if (tier === "MEDIUM") return "balanced";
   return "strong";
 }
@@ -65,7 +65,7 @@ function tierSlot(tier: Tier): ModelSlotName {
  * Pick a model slot for the request.
  *
  * Profile semantics (see docs/routing-strategy.md):
- *   - auto     → tier → slot (14-dim score decides; SIMPLE/MEDIUM→balanced, COMPLEX/REASONING→strong)
+ *   - auto     → tier → slot (14-dim score decides; SIMPLE→fast, MEDIUM→balanced, COMPLEX/REASONING→strong)
  *   - eco      → balanced (flash) regardless of tier — cost-optimized
  *   - premium  → strong (glm) regardless of tier — quality-optimized
  *
@@ -98,9 +98,6 @@ export function pickSlotForFeatures(
 
   const preferred: ModelSlotName[] = [];
   if (profileDefault) preferred.push(profileDefault);
-  if (input.requirements.toolCalling || input.requirements.agentic) {
-    preferred.push(input.tier === "COMPLEX" || input.tier === "REASONING" ? "strong" : "balanced");
-  }
   preferred.push(tierSlot(input.tier), "balanced", "strong");
 
   for (const slot of preferred) {

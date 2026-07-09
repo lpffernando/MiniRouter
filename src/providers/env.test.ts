@@ -68,7 +68,7 @@ describe("pickSlotForFeatures", () => {
     expect(selected.model).toBe("deepseek-v4-flash");
   });
 
-  it("keeps fast reserved and uses balanced for automatic simple requests even when fast is configured", () => {
+  it("routes simple requests to the fast slot when configured", () => {
     const slots = loadModelSlotsFromEnv({
       MINIROUTER_FAST_PROVIDER: "openai-compatible",
       MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
@@ -89,11 +89,11 @@ describe("pickSlotForFeatures", () => {
       },
     });
 
-    expect(selected.slot).toBe("balanced");
-    expect(selected.model).toBe("deepseek-v4-flash");
+    expect(selected.slot).toBe("fast");
+    expect(selected.model).toBe("glm-4.7-flash");
   });
 
-  it("used to route vision requests to the vision slot — now vision is preprocessed so it goes to balanced/strong", () => {
+  it("routes simple requests to fast slot even with vision slot configured (no vision in request)", () => {
     const slots = loadModelSlotsFromEnv({
       MINIROUTER_FAST_PROVIDER: "openai-compatible",
       MINIROUTER_FAST_BASE_URL: "https://api.example.com/v1",
@@ -118,8 +118,8 @@ describe("pickSlotForFeatures", () => {
       },
     });
 
-    expect(selected.slot).toBe("balanced");
-    expect(selected.model).toBe("deepseek-v4-flash");
+    expect(selected.slot).toBe("fast");
+    expect(selected.model).toBe("glm-4.7-flash");
   });
 
   it("routes vision+tool requests to balanced/strong after vision preprocessing strips images", () => {
