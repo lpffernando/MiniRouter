@@ -1,3 +1,16 @@
+# Model score data
+
+`seed-data.json` is the optional source for the SQLite `model_scores` table.
+It is not loaded automatically. Run this once as the service user when you
+want the model dashboard and database-backed pricing catalog:
+
+```bash
+npm run seed:models
+```
+
+The price comparison below is reference material for maintaining that seed
+data; verify provider pricing before using it for production billing.
+
 # 2026年7月 国内大模型 API 价格大全
 
 > 数据来源：各厂商官方定价页面 + 公开报道，汇率 1 USD ≈ 7.2 CNY

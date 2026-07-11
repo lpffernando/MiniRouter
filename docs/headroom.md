@@ -30,7 +30,8 @@ The repository includes `start-headroom.bat` for running the official Headroom p
 
 ```bat
 start-headroom.bat
-# or: npm run headroom:start
+# or run the script directly from PowerShell:
+# .\start-headroom.bat
 ```
 
 The script starts:
@@ -51,10 +52,9 @@ Headroom is managed alongside MiniRouter via npm scripts:
 
 | Command | What it does |
 |---|---|
-| `npm run restart` | Restart both Headroom + MiniRouter |
-| `npm run headroom:start` | Start Headroom only |
-| `npm run headroom:stop` | Stop Headroom only |
-| `npm run headroom:restart` | Restart Headroom only |
+| `restart.bat` | Restart both Headroom + MiniRouter |
+| `start-headroom.bat` | Start Headroom only |
+| `stop-headroom.bat` | Stop Headroom only |
 | `start-headroom.bat` | Start Headroom (standalone) |
 
 The `restart.bat` script kills both services (ports 8787 + 8402), starts Headroom

@@ -24,7 +24,7 @@ git push origin HEAD
 
 # 3. SSH 到服务器更新
 echo "[3/3] Updating server..."
-ssh -p "${SSH_PORT}" "${SSH_DEST}" bash -s <<SCRIPT
+ssh -p "${SSH_PORT}" "${SSH_DEST}" "REMOTE_DIR='${REMOTE_DIR}' bash -s" <<'SCRIPT'
 set -euo pipefail
 cd "${REMOTE_DIR}"
 

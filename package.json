@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
+    "seed:models": "tsx models/seed-models.ts",
     "format": "prettier --write .",
     "start": "node dist/serve.js"
   },

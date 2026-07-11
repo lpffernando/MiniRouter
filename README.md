@@ -36,14 +36,20 @@ npm run build
 npm start
 ```
 
+To populate the optional model-score dashboard and database-backed pricing
+catalog, run `npm run seed:models` once as the same OS user that runs the
+service. This is intentionally manual so local model-score customizations are
+not overwritten during normal startup or deployment.
+
 The service listens on `http://localhost:8402` by default. Check its readiness:
 
 ```bash
 curl http://localhost:8402/health/ready
 ```
 
-`balanced`, `strong`, and `vision` are required for readiness. `fast` is
-optional; absent a fast slot, simple requests fall back to `balanced`.
+`balanced`, `strong`, and `vision` are required for readiness. `fast` is an
+optional slot for explicit `minirouter/slot/fast` requests; automatic routing
+currently maps simple requests to `balanced`.
 
 For local experimentation `.env.example` enables `MINIROUTER_SOLO=true`, which
 allows requests without an API key. Never expose that mode to an untrusted

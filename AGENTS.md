@@ -6,16 +6,19 @@
 
 ```
 src/
-├── router/              # 14维规则路由引擎 (<1ms)
-├── compression/         # 上下文压缩
-├── db/                  # 数据层 (SQLite + Drizzle)
-├── auth/                # API Key 认证
-├── server/              # HTTP API (Hono)
-├── models.ts            # 模型注册表
-└── model-registry.ts    # 模型评分数据库
+├── auth/                # API Key 认证与用户身份
+├── config/              # .env 加载与运行时配置
+├── context/             # 可选 Headroom 上下文优化
+├── db/                  # SQLite、迁移与查询层
+├── protocols/           # OpenAI / Anthropic 请求标准化
+├── providers/           # 环境槽位、渠道选择与上游适配器
+├── router/              # 14 维规则路由引擎
+├── routing/             # 特征提取与路由调试回执
+└── server/              # Hono HTTP API 与 SSE 用量采集
 ```
 
 ## 数据维护
 
-- `models-dashboard.html` — 模型可视化表格
-- `.Codex/skills/update-model-registry/` — 模型数据更新 Skill
+- `models/dashboard.html` — 模型评分可视化表格
+- `models/seed-data.json` — 模型评分种子数据
+- `.agents/skills/update-model-registry/` — 模型数据更新 Skill

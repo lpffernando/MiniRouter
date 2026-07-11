@@ -11,7 +11,7 @@
 import type { Context } from "hono";
 import type { AuthResult } from "../../auth/types.js";
 import { route, getConfig } from "../../router/index.js";
-import { buildModelPricing } from "../../router/utils.js";
+import type { ModelPricing } from "../../router/selector.js";
 import { logUsage } from "../../db/queries/usage.js";
 import { randomUUID } from "node:crypto";
 import { normalizeOpenAIChatRequest } from "../../protocols/openai-chat.js";
@@ -39,6 +39,7 @@ type OptimizationLog = {
 };
 
 const channelCursors = new Map<string, number>();
+const routingModelPricing = new Map<string, ModelPricing>();
 
 /**
  * Extract client-declared thinking effort from request body.
@@ -92,7 +93,7 @@ export function selectConfiguredSlotForChat(
   const profile = routingProfile(modelParam, undefined);
   const decision = route(prompt, systemPrompt, request.maxOutputTokens, {
     config: getConfig(),
-    modelPricing: buildModelPricing(),
+    modelPricing: routingModelPricing,
     routingProfile: profile,
     hasTools: features.requirements.toolCalling,
     effort,

@@ -167,9 +167,9 @@ export type RoutingConfig = {
    * requests through `tiers`, even when tools are present in the request).
    */
   agenticTiers?: Record<Tier, TierConfig> | null;
-  /** Tier configs for eco profile — ultra cost-optimized (blockrun/eco). `null` falls back to `tiers`. */
+  /** Tier configs for eco profile. `null` falls back to `tiers`. */
   ecoTiers?: Record<Tier, TierConfig> | null;
-  /** Tier configs for premium profile — best quality (blockrun/premium). `null` falls back to `tiers`. */
+  /** Tier configs for premium profile. `null` falls back to `tiers`. */
   premiumTiers?: Record<Tier, TierConfig> | null;
   /** Time-windowed promotions that temporarily override tier routing */
   promotions?: Promotion[];

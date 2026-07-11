@@ -1,5 +1,9 @@
 # MiniRouter Design
 
+> Historical design and roadmap notes. For current runtime behavior, use the
+> root README plus `docs/routing-mvp.md` and `docs/routing-strategy.md`; those
+> documents take precedence when this file conflicts with the implementation.
+
 MiniRouter is an Agent-oriented LLM routing gateway. Its job is not only to rank
 models, but to decide which model can satisfy a request at the best cost-quality
 point, then execute it with an explainable fallback plan.

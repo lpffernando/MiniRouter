@@ -2,7 +2,7 @@
  * Default Routing Config
  *
  * All routing parameters as a TypeScript constant.
- * Operators override via openclaw.yaml plugin config.
+ * Operators override selected scoring parameters with MINIROUTER_* variables.
  *
  * Scoring uses 14 weighted dimensions with sigmoid confidence calibration.
  */

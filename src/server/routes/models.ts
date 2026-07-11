@@ -3,7 +3,6 @@
  */
 
 import type { Context } from "hono";
-import { VISIBLE_OPENCLAW_MODELS } from "../../models.js";
 import { loadModelSlotsFromEnv } from "../../providers/env.js";
 
 type EnvLike = Record<string, string | undefined>;
@@ -52,18 +51,7 @@ export function buildModelList(env: EnvLike = process.env, created = Math.floor(
       root: slot.model,
     }));
 
-  if (slotEntries.length > 0) {
-    return [...virtualRoutingModels(created), ...slotEntries];
-  }
-
-  const legacyModels = VISIBLE_OPENCLAW_MODELS.map((m) => ({
-    id: m.id,
-    object: "model" as const,
-    created,
-    owned_by: "minirouter",
-  }));
-
-  return [...virtualRoutingModels(created), ...legacyModels];
+  return [...virtualRoutingModels(created), ...slotEntries];
 }
 
 /**

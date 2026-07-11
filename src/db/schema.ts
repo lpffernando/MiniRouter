@@ -164,7 +164,7 @@ export const providerInstances = sqliteTable("provider_instances", {
 
   slot: text("slot").notNull().default("balanced"), // fast | balanced | strong | vision
   modelId: text("model_id").notNull(), // e.g. "google/gemini-2.5-flash"
-  provider: text("provider").notNull(), // e.g. "blockrun", "openai-direct"
+  provider: text("provider").notNull(), // e.g. "deepseek", "openai-direct"
   providerKind: text("provider_kind").notNull().default("openai-compatible"),
   endpointUrl: text("endpoint_url").notNull(),
   apiKey: text("api_key"),

@@ -69,9 +69,8 @@ function tierSlot(tier: Tier): ModelSlotName {
  *   - eco      → balanced (flash) regardless of tier — cost-optimized
  *   - premium  → strong (glm) regardless of tier — quality-optimized
  *
- * Vision requests always go to the vision slot first (for MiniCPM-V
- * preprocessing) regardless of profile — vision is a capability requirement,
- * not a difficulty signal.
+ * Vision requests always go to the vision slot regardless of profile — vision
+ * is a capability requirement, not a difficulty signal.
  */
 export function pickSlotForFeatures(
   slots: ModelSlots,
