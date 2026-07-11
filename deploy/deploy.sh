@@ -29,10 +29,15 @@ set -euo pipefail
 cd "${REMOTE_DIR}"
 
 echo "  Pulling code..."
-git pull origin HEAD
+BRANCH="$(git branch --show-current)"
+if [[ -z "${BRANCH}" ]]; then
+  echo "Deployment checkout is detached; check out a named branch first." >&2
+  exit 1
+fi
+git pull --ff-only origin "${BRANCH}"
 
 echo "  Installing deps..."
-npm install
+npm ci
 
 echo "  Building..."
 npm run build
