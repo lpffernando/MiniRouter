@@ -1,24 +1,82 @@
-# MiniRouter
+# MiniRouter — Agent Guide
 
-智能 LLM 路由网关 — 面向国内大模型，自动识别任务难度选择最优性价比模型。
+This file helps AI coding agents understand the MiniRouter codebase. It
+replaces the legacy `.claude/` and `.agents/` skill directories (removed).
+Agents should start here, then read the relevant `docs/` file for details.
 
-## 项目结构
+## Project structure
 
 ```
 src/
-├── auth/                # API Key 认证与用户身份
-├── config/              # .env 加载与运行时配置
-├── context/             # 可选 Headroom 上下文优化
-├── db/                  # SQLite、迁移与查询层
-├── protocols/           # OpenAI / Anthropic 请求标准化
-├── providers/           # 环境槽位、渠道选择与上游适配器
-├── router/              # 14 维规则路由引擎
-├── routing/             # 特征提取与路由调试回执
-└── server/              # Hono HTTP API 与 SSE 用量采集
+├── auth/                # API Key authentication & user identity
+├── config/              # .env loading & runtime configuration
+├── context/             # Optional Headroom context optimization
+├── db/                  # SQLite, migrations, query layer
+├── protocols/           # OpenAI / Anthropic request normalization
+├── providers/           # Slot env vars, channel selection, upstream adapters
+├── router/              # 14-dimension rule routing engine
+├── routing/             # Feature extraction & routing debug receipts
+└── server/              # Hono HTTP API & SSE usage collection
 ```
 
-## 数据维护
+## Where to look
 
-- `models/dashboard.html` — 模型评分可视化表格
-- `models/seed-data.json` — 模型评分种子数据
-- `.agents/skills/update-model-registry/` — 模型数据更新 Skill
+### How routing works → `docs/routing-strategy.md`
+
+The 14-dimension classifier, tier boundaries, slot selection, and all
+configuration parameters. README has a quick summary; this doc has the
+full strategy.
+
+### How to deploy → `README.md` (Docker section)
+
+Docker Compose is the recommended deployment method. See also:
+- `docker-compose.yml` — runtime config
+- `deploy/deploy.sh` — upload + deploy script
+- `deploy/nginx-minirouter.conf` — reverse proxy template
+
+### Environment variables → `.env.example`
+
+All configurable variables with sensible defaults in comments. The code
+reads them via `src/config.ts` → `getConfig()`.
+
+### Routing tuning → `README.md` (Routing tuning section)
+
+Parameters that control SIMPLE / MEDIUM / COMPLEX / REASONING tier ratios.
+Edit in `docker-compose.yml` → `environment:` and `docker compose up -d`.
+
+### Database queries → `docs/db-queries.md`
+
+SQLite schema, query recipes for usage logs, spend tracking, user management.
+
+### Headroom context optimization → `docs/headroom.md`
+
+External proxy + local tail compression for long contexts.
+
+### Infrastructure management → `docs/infra-management-design.md`
+
+Channel management, provider instances, cost tracking architecture.
+
+### Model registry maintenance → `docs/model-maintenance/update-model-registry.md`
+
+How to update pricing, benchmarks, and model scores.
+
+### Roadmap → `docs/roadmap.md`
+
+What's planned: Headroom integration, admin dashboard, multi-tenancy, etc.
+
+## Model data
+
+- `models/seed-data.json` — Pricing & benchmark seed data
+- `models/seed-models.ts` — Script to import into SQLite
+- `models/dashboard.html` — Model comparison table (served at `/models/dashboard`)
+
+## Key files to read first
+
+| File | Why |
+|------|-----|
+| `src/router/config.ts` | DEFAULT_ROUTING_CONFIG + env var overrides |
+| `src/providers/env.ts` | Slot selection logic |
+| `src/router/rules.ts` | 14-dimension scoring |
+| `src/server/routes/chat.ts` | OpenAI-compatible request handling |
+| `src/server/routes/anthropic-messages.ts` | Anthropic Messages API handling |
+| `src/server/routes/channel-execution.ts` | Channel failover logic |

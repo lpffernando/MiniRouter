@@ -55,7 +55,7 @@ MiniRouter 可以把一个订阅变成智能调度网关：
   FAST     → deepseek-v4-flash  （便宜、快速）
   BALANCED → deepseek-v4-pro    （主力模型）
   STRONG   → glm-5.2            （强推理）
-  VISION   → glm-5.2-vision     （多模态）
+  VISION   → minimax-m3     （多模态）
 ```
 
 你的应用只调 `minirouter/auto`，MiniRouter 自动选最便宜的能胜任的槽位：
