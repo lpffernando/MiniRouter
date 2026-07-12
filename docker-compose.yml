@@ -1,46 +1,56 @@
-# MiniRouter — Docker Compose production deployment
+# MiniRouter production deployment
 #
-# Usage:
-#   1. Create .env from .env.example and fill in your API keys
-#   2. Edit .env.tuning to adjust routing parameters (optional)
-#   3. docker compose up -d
+# Secrets (API keys) are NOT in this file. They come from the server-side
+# `.env` (gitignored) via `env_file:` below. This compose file only pins the
+# non-secret runtime policy so it is reviewed in git and reproducible.
 #
-# Secrets (API keys) live in .env on the host and are passed via
-# the `env_file` directive — never baked into the image.
+# Usage on the server (/opt/minirouter-src):
+#   docker compose up -d --build --force-recreate
+#
+# Ports:
+#   8402 -> container API (internal)
+#   8082 -> public API, clients use http://<host>:8082/v1
 
 services:
   minirouter:
+    image: minirouter:latest
     build:
       context: .
       args:
-        # Set to true for mainland China (mirrors + npmmirror)
-        USE_CHINA_MIRROR: "false"
-        NPM_REGISTRY: "https://registry.npmjs.org"
+        USE_CHINA_MIRROR: "true"
+        NPM_REGISTRY: "https://registry.npmmirror.com"
     container_name: minirouter
-    # Internal port 8402; map to host 8402
+    restart: unless-stopped
     ports:
-      - "${MINIROUTER_HOST_PORT:-8402}:8402"
+      - "8402:8402"
+      - "8082:8402"
+    volumes:
+      - /opt/minirouter-data:/data
+    # Server-side .env supplies the secret API keys (BALANCED/STRONG).
+    # It is gitignored and never committed.
     env_file:
       - .env
     environment:
-      - HOME=/data
-      - NODE_ENV=production
-    volumes:
-      # Persist SQLite database outside the container
-      - minirouter-data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:8402/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-volumes:
-  minirouter-data:
-    # Use a bind mount for direct host access to the DB file
-    # driver: local
-    # driver_opts:
-    #   type: none
-    #   o: bind
-    #   device: /opt/minirouter-data
+      # ── runtime policy (pinned, reviewed in git) ──
+      NODE_ENV: production
+      MINIROUTER_SOLO: "false"
+      MINIROUTER_PORT: "8402"
+      BLOCKRUN_PROXY_PORT: "8402"
+      MINIROUTER_CONFIDENCE_THRESHOLD: "0.55"
+      MINIROUTER_CONFIDENCE_STEEPNESS: "12"
+      MINIROUTER_BOUNDARY_SIMPLE_MEDIUM: "0.10"
+      MINIROUTER_BOUNDARY_MEDIUM_COMPLEX: "0.3"
+      MINIROUTER_BOUNDARY_COMPLEX_REASONING: "0.5"
+      MINIROUTER_TOKEN_COUNT_SIMPLE: "50"
+      MINIROUTER_TOKEN_COUNT_COMPLEX: "500"
+      MINIROUTER_AMBIGUOUS_DEFAULT_TIER: "SIMPLE"
+      MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER: "SIMPLE"
+      MINIROUTER_AGENTIC_SCORE_THRESHOLD: "0.5"
+      # ── FAST tier (reuse the balanced key from env_file) ──
+      MINIROUTER_FAST_PROVIDER: openai-compatible
+      MINIROUTER_FAST_BASE_URL: https://opencode.ai/zen/go/v1
+      MINIROUTER_FAST_MODEL: deepseek-v4-flash
+      MINIROUTER_FAST_SUPPORTS_TOOLS: "true"
+      MINIROUTER_FAST_API_KEY: ${MINIROUTER_BALANCED_API_KEY}
+      # ── override balanced model (server .env still had deepseek-v4-flash) ──
+      MINIROUTER_BALANCED_MODEL: deepseek-v4-pro
