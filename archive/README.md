@@ -10,5 +10,6 @@ Files moved here are **not actively maintained** — they're kept for reference:
 - `restart.bat`, `start-headroom.bat`, `stop-headroom.bat` — DEPRECATED Windows batch files for local dev
 - `setup-server.sh`, `minirouter.service` — DEPRECATED systemd deployment (Docker is now the primary method)
 - `docs/superpowers/` — Pi framework planning documents (infra management plan, already implemented)
+- `DESIGN.md` — Historical design document (superseded by `docs/routing-strategy.md`, `docs/routing-mvp.md`, `docs/roadmap.md`)
 
 These files are safe to delete if you're confident they're no longer needed.
