@@ -56,6 +56,7 @@ export async function getUsageLogs(c: Context) {
   const to = c.req.query("to");
   const status = c.req.query("status");
   const model = c.req.query("model");
+  const tier = c.req.query("tier");
 
   // Only admins can query other users' logs. Regular users can only query their own.
   const isAdmin = auth.role === "admin" || auth.role === "superadmin";
@@ -80,6 +81,7 @@ export async function getUsageLogs(c: Context) {
   if (from) conditions.push(gte(usageLogs.createdAt, from));
   if (to) conditions.push(lte(usageLogs.createdAt, to));
   if (status) conditions.push(eq(usageLogs.status, status));
+  if (tier) conditions.push(eq(usageLogs.tier, tier));
   if (model) conditions.push(eq(usageLogs.model, model));
 
   const query = db

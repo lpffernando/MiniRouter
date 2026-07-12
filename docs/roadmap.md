@@ -146,7 +146,7 @@
 
 ### 现状
 - `models/seed-data.json` 中存储了评分数据，`models/seed-models.ts` 脚本负责导入到数据库。
-- `models/registry.ts` 存在但未在代码中被引用（可能是旧的尝试）。
+- `archive/registry.ts` 是旧代码，已被归档移除。
 - 没有 API 让用户持续更新模型评分（只能通过 seed 脚本全量替换）。
 - 没有机制自动拉取模型价格更新（如 OpenRouter 价格变动）。
 

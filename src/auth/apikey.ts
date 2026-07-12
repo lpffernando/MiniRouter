@@ -137,7 +137,7 @@ export async function listApiKeysForUser(userId: string) {
   }));
 }
 
-function parseScopes(raw: string): string[] {
+export function parseScopes(raw: string): string[] {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((scope) => typeof scope === "string") : [];

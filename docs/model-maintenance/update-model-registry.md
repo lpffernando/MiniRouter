@@ -45,8 +45,10 @@ benchmark scores, and new model releases. Suggested frequency: weekly or monthly
 ```
 models/seed-data.json (source of truth)
     ↓ npm run seed:models
-~/.minirouter/minirouter.db (SQLite, queried at runtime)
+/data/.minirouter/minirouter.db (SQLite, queried at runtime)
 ```
+
+> Pricing reference: [docs/model-pricing.md](../model-pricing.md)
 
 ## Model ID Convention
 

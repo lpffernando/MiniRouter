@@ -12,7 +12,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REMOTE_DIR="${1:-/opt/minirouter-src}"
-if [ -f .env ]; then set -a; source .env; set +a; fi
+
+# Extract only SSH vars from .env using grep (bypasses bash source quirks)
+if [ -f .env ]; then
+  while IFS='=' read -r key value; do
+    case "$key" in MINIROUTER_SSH_*) export "$key"="$value" ;; esac
+  done < <(grep -E '^MINIROUTER_SSH_[A-Z_]+=' .env | sed 's/[[:space:]]*#.*//')
+fi
 
 HOST="${MINIROUTER_SSH_HOST:?set MINIROUTER_SSH_HOST in .env}"
 PORT="${MINIROUTER_SSH_PORT:-22}"

@@ -27,6 +27,8 @@ import { getModelScore, listModelScores, updateModelScore } from "./routes/model
 import { debugRoute } from "./routes/debug-route.js";
 import {
   register,
+  setup,
+  adminVerify,
   adminOverview,
   adminListUsers,
   adminCreateUser,
@@ -65,6 +67,11 @@ export function createApp(): Hono {
   app.get("/health", health);
   app.get("/health/ready", readiness);
 
+  // First-time setup (no auth required)
+  app.post("/setup", setup);
+
+  // Admin verify needs auth middleware, so it goes under the api group
+
   // User registration is authenticated under the admin router. Keep public
   // model APIs available for the model dashboard.
   app.get("/api/models", listModelScores);
@@ -87,6 +94,7 @@ export function createApp(): Hono {
 
   // Admin endpoints
   api.post("/admin/register", register);
+  api.get("/admin/verify", adminVerify);
   api.get("/admin/overview", adminOverview);
   api.get("/admin/users", adminListUsers);
   api.post("/admin/users", adminCreateUser);

@@ -4,7 +4,7 @@
 
 import type { Context } from "hono";
 import type { AuthResult } from "../../auth/types.js";
-import { createApiKey, listApiKeysForUser, revokeApiKey } from "../../auth/apikey.js";
+import { ApiKeyAuthProvider, createApiKey, listApiKeysForUser, revokeApiKey } from "../../auth/apikey.js";
 import { getPlatformOverview } from "../../db/queries/spend.js";
 import { getUserUsageStats } from "../../db/queries/usage.js";
 import { createUser, getUserByEmail, getUserById, listUsers, updateUser } from "../../db/queries/users.js";
@@ -16,6 +16,9 @@ import {
 } from "../../db/queries/provider-instances.js";
 import type { ProviderChannel } from "../../providers/channels.js";
 import type { ModelSlotName } from "../../providers/types.js";
+import { getDb } from "../../db/connection.js";
+import { users } from "../../db/schema.js";
+import { sql } from "drizzle-orm";
 
 type CreateKeyRequest = {
   name?: string;
@@ -25,6 +28,64 @@ type CreateKeyRequest = {
   rateLimitRpmOverride?: number;
   spendLimitDailyOverrideUsd?: number;
 };
+
+/**
+ * POST /setup — First-time admin registration.
+ *
+ * Creates the first admin user + an API key. Only works if no users exist yet.
+ * Returns the API key once; must be saved by the caller.
+ */
+export async function setup(c: Context) {
+  const db = getDb();
+  const existing = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
+  if (Number(existing[0]?.count ?? 0) > 0) {
+    return c.json({ error: { message: "Setup already completed. An admin user already exists.", type: "setup_complete" } }, 409);
+  }
+
+  const body = await c.req.json();
+  const email = body.email || "admin@minirouter.local";
+  const name = body.name || "Admin";
+
+  const user = await createUser({
+    email,
+    name,
+    role: "superadmin",
+    routingProfile: "auto",
+  });
+
+  const key = await createApiKey({ userId: user.id, name: "Admin", scopes: ["chat", "models", "usage", "manage"] });
+
+  return c.json({
+    user_id: user.id,
+    email: user.email,
+    name: user.name,
+    api_key: key.key,
+    key_prefix: key.keyPrefix,
+    message: "Save this API key; it will not be shown again.",
+  }, 201);
+}
+
+/**
+ * POST /admin/verify — Validate an admin API key.
+ *
+ * Returns the user info + scopes if the key is valid and has manage scope.
+ */
+export async function adminVerify(c: Context) {
+  const auth = c.get("auth") as AuthResult;
+  if (!auth) {
+    return c.json({ error: { message: "No valid API key provided.", type: "authentication_error" } }, 401);
+  }
+  const isAdminRole = auth.role === "admin" || auth.role === "superadmin";
+  const hasManageScope = auth.scopes?.includes("manage");
+  if (!isAdminRole || !hasManageScope) {
+    return c.json({ error: { message: "Admin manage access required", type: "authorization_error" } }, 403);
+  }
+  return c.json({
+    user_id: auth.userId,
+    role: auth.role,
+    scopes: auth.scopes,
+  });
+}
 
 function requireAdmin(c: Context): AuthResult {
   const auth = c.get("auth") as AuthResult;
