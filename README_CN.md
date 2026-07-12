@@ -30,11 +30,11 @@ MiniRouter 是一个自托管的 LLM 智能调度网关。它不是简单转发 
 14 维规则分类器对用户提示词打分，然后映射到四个难度层级：
 
 ```
-一句话总结、轻量改写 (SIMPLE)    → BALANCED 槽位   走性价比模型
-普通代码分析、工具调用 (MEDIUM)   → BALANCED 槽位   走均衡模型
-复杂排查、深度推理 (COMPLEX)      → STRONG 槽位     自动切到强模型
-数学证明、长上下文 (REASONING)    → STRONG 槽位     走最强模型
-图片 / 多模态请求                 → VISION 槽位     走视觉模型
+一句话总结、轻量改写 (SIMPLE)    → FAST 槽位      走性价比模型（如配置）
+普通代码分析、工具调用 (MEDIUM)   → BALANCED 槽位  走均衡模型
+复杂排查、深度推理 (COMPLEX)      → STRONG 槽位    自动切到强模型
+数学证明、长上下文 (REASONING)    → STRONG 槽位    走最强模型
+图片 / 多模态请求                 → VISION 槽位    走视觉模型
 ```
 
 在 `.env` 中为每个槽位配置上游端点。MiniRouter 选好槽位后转发请求，仅此而已。
@@ -432,7 +432,7 @@ export OPENAI_MODEL="minirouter/auto"
 
 | 变量                                   | 默认值   | 说明                                   |
 | -------------------------------------- | :------: | -------------------------------------- |
-| `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM`    | `0.0`    | SIMPLE / MEDIUM 分界线                  |
+| `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM`    | `0.10`   | SIMPLE / MEDIUM 分界线                  |
 | `MINIROUTER_BOUNDARY_MEDIUM_COMPLEX`   | `0.3`    | MEDIUM / COMPLEX 分界线                 |
 | `MINIROUTER_BOUNDARY_COMPLEX_REASONING`| `0.5`    | COMPLEX / REASONING 分界线              |
 | `MINIROUTER_TOKEN_COUNT_SIMPLE`        | `50`     | token 数 ≤ 此值 → 向 SIMPLE 倾斜        |
@@ -440,8 +440,10 @@ export OPENAI_MODEL="minirouter/auto"
 | `MINIROUTER_CONFIDENCE_THRESHOLD`      | `0.55`   | 低于此置信度 → 回退到模糊层级           |
 | `MINIROUTER_CONFIDENCE_STEEPNESS`      | `12`     | 置信度 sigmoid 的陡峭度                 |
 | `MINIROUTER_AMBIGUOUS_DEFAULT_TIER`    | `MEDIUM` | 低置信度时的回退层级                    |
-| `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER`| `MEDIUM` | JSON/tool_choice 请求的最低层级         |
+| `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER`| `SIMPLE` | JSON/tool_choice 请求的最低层级         |
 | `MINIROUTER_AGENTIC_SCORE_THRESHOLD`   | `0.5`    | agentic 维度阈值，触发 agentic 路由     |
+| `MINIROUTER_AGENTIC_MODE`              | —        | 强制 agentic 模式：`true` / `false`（不设置则自动检测） |
+| `MINIROUTER_DIMENSION_WEIGHTS`         | —        | JSON 对象，覆盖 14 个维度权重          |
 
 ### 上下文优化（可选，默认关闭）
 

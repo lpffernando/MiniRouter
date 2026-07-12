@@ -33,7 +33,7 @@ Technical highlights:
 A 14-dimension rule classifier scores the user prompt, then maps it to a tier:
 
 ```
-One-sentence edits, light rewrites (SIMPLE)   → BALANCED slot   cost-effective model
+One-sentence edits, light rewrites (SIMPLE)   → FAST slot       cost-effective model (if configured)
 Code analysis, tool calls (MEDIUM)            → BALANCED slot   your workhorse
 Deep debugging, complex reasoning (COMPLEX)   → STRONG slot     auto-switch to strong model
 Math proofs, long context (REASONING)         → STRONG slot     strongest model
@@ -447,7 +447,7 @@ At least `balanced`, `strong`, and `vision` must be configured for the
 
 | Variable | Default | Description |
 | --- | :---: | --- |
-| `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM` | `0.0` | Score that separates SIMPLE from MEDIUM |
+| `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM` | `0.10` | Score that separates SIMPLE from MEDIUM |
 | `MINIROUTER_BOUNDARY_MEDIUM_COMPLEX` | `0.3` | Score that separates MEDIUM from COMPLEX |
 | `MINIROUTER_BOUNDARY_COMPLEX_REASONING` | `0.5` | Score that separates COMPLEX from REASONING |
 | `MINIROUTER_TOKEN_COUNT_SIMPLE` | `50` | Tokens ≤ this → nudged toward SIMPLE |
@@ -455,8 +455,10 @@ At least `balanced`, `strong`, and `vision` must be configured for the
 | `MINIROUTER_CONFIDENCE_THRESHOLD` | `0.55` | Below this → falls back to ambiguous tier |
 | `MINIROUTER_CONFIDENCE_STEEPNESS` | `12` | Sigmoid sharpness for confidence |
 | `MINIROUTER_AMBIGUOUS_DEFAULT_TIER` | `MEDIUM` | Fallback tier for low-confidence routing |
-| `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER` | `MEDIUM` | Min tier for JSON/tool_choice requests |
+| `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER` | `SIMPLE` | Min tier for JSON/tool_choice requests |
 | `MINIROUTER_AGENTIC_SCORE_THRESHOLD` | `0.5` | Agentic dimension threshold for agentic routing |
+| `MINIROUTER_AGENTIC_MODE` | — | Force agentic mode: `true` / `false` (omit = auto-detect) |
+| `MINIROUTER_DIMENSION_WEIGHTS` | — | JSON object overriding 14 dimension weights |
 
 ### Context optimisation (optional — off by default)
 

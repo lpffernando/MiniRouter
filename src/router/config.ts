@@ -1057,7 +1057,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
 
     // Tier boundaries on weighted score axis
     tierBoundaries: {
-      simpleMedium: 0.0,
+      simpleMedium: 0.10,
       mediumComplex: 0.3, // Raised from 0.18 - prevent simple tasks from reaching expensive COMPLEX tier
       complexReasoning: 0.5, // Raised from 0.4 - reserve for true reasoning tasks
     },
@@ -1309,7 +1309,7 @@ export const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   //
   overrides: {
     maxTokensForceComplex: 100_000,
-    structuredOutputMinTier: "MEDIUM",
+    structuredOutputMinTier: "SIMPLE",
     ambiguousDefaultTier: "MEDIUM",
     // agenticMode left undefined → auto-detect via tools/agenticScore.
     // Set to `true` to force agentic tiers; `false` to disable them entirely.
