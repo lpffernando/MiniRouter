@@ -445,20 +445,46 @@ At least `balanced`, `strong`, and `vision` must be configured for the
 
 ### Routing tuning (optional — sensible defaults are built in)
 
-| Variable | Default | Description |
-| --- | :---: | --- |
-| `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM` | `0.10` | Score that separates SIMPLE from MEDIUM |
-| `MINIROUTER_BOUNDARY_MEDIUM_COMPLEX` | `0.3` | Score that separates MEDIUM from COMPLEX |
-| `MINIROUTER_BOUNDARY_COMPLEX_REASONING` | `0.5` | Score that separates COMPLEX from REASONING |
-| `MINIROUTER_TOKEN_COUNT_SIMPLE` | `50` | Tokens ≤ this → nudged toward SIMPLE |
-| `MINIROUTER_TOKEN_COUNT_COMPLEX` | `500` | Tokens ≥ this → nudged toward COMPLEX |
-| `MINIROUTER_CONFIDENCE_THRESHOLD` | `0.55` | Below this → falls back to ambiguous tier |
-| `MINIROUTER_CONFIDENCE_STEEPNESS` | `12` | Sigmoid sharpness for confidence |
-| `MINIROUTER_AMBIGUOUS_DEFAULT_TIER` | `MEDIUM` | Fallback tier for low-confidence routing |
-| `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER` | `SIMPLE` | Min tier for JSON/tool_choice requests |
-| `MINIROUTER_AGENTIC_SCORE_THRESHOLD` | `0.5` | Agentic dimension threshold for agentic routing |
-| `MINIROUTER_AGENTIC_MODE` | — | Force agentic mode: `true` / `false` (omit = auto-detect) |
-| `MINIROUTER_DIMENSION_WEIGHTS` | — | JSON object overriding 14 dimension weights |
+These parameters control **how many requests land in each tier**, which directly
+determines the balance between cost savings and quality:
+
+```
+Tier mapping:  SIMPLE → FAST slot    MEDIUM → BALANCED    COMPLEX/REASONING → STRONG
+```
+
+**Key parameters that affect the SIMPLE / MEDIUM / COMPLEX / REASONING split:**
+
+- **Three tier boundaries** (`BOUNDARY_*`) — the most direct control. Move them
+  left/right to shift the proportion of requests in each tier.
+- **Confidence threshold** — higher = more requests fall through to the ambiguous
+  fallback tier (safe but more expensive).
+- **Token count thresholds** — longer prompts are nudged up a tier; shorter ones down.
+
+| Variable | Default | What it controls | Effect when you raise the value |
+| --- | :---: | --- | --- |
+| `BOUNDARY_SIMPLE_MEDIUM` | `0.10` | Score threshold between SIMPLE and MEDIUM | **↑ More requests → SIMPLE (cheaper)**. Fewer tasks get upgraded to MEDIUM. |
+| `BOUNDARY_MEDIUM_COMPLEX` | `0.3` | Score threshold between MEDIUM and COMPLEX | **↑ More requests → MEDIUM (balanced)**. Fewer reach the expensive COMPLEX tier. |
+| `BOUNDARY_COMPLEX_REASONING` | `0.5` | Score threshold between COMPLEX and REASONING | **↑ More requests → COMPLEX (strong)**. Only the hardest tasks reach REASONING. |
+| `TOKEN_COUNT_SIMPLE` | `50` | Token count ≤ this → nudged toward SIMPLE | Raise to push more short prompts to SIMPLE. |
+| `TOKEN_COUNT_COMPLEX` | `500` | Token count ≥ this → nudged toward COMPLEX | Raise to require longer prompts before upgrading. |
+| `CONFIDENCE_THRESHOLD` | `0.55` | Below this confidence → fallback to ambiguous tier | **↑ More requests go to ambiguous fallback** (safer, but more expensive). |
+| `CONFIDENCE_STEEPNESS` | `12` | Sigmoid sharpness for confidence calibration | Higher = sharper on/off. Rarely needs tuning. |
+| `AMBIGUOUS_DEFAULT_TIER` | `MEDIUM` | Fallback tier when confidence is below threshold | `SIMPLE` = max cost savings; `COMPLEX` = err on the safe side. |
+| `STRUCTURED_OUTPUT_MIN_TIER` | `SIMPLE` | Minimum tier for JSON mode / tool_choice requests | `SIMPLE` = cheapest; `MEDIUM`/`COMPLEX` = better quality but more expensive. |
+| `AGENTIC_SCORE_THRESHOLD` | `0.5` | Agentic dimension score that triggers agentic routing | Higher = harder to trigger agentic mode (more requests stay on standard routing). |
+| `AGENTIC_MODE` | — | Force agentic mode: `true` / `false` (omit = auto-detect) | `true` = always use agentic tiers; `false` = disable entirely. |
+| `DIMENSION_WEIGHTS` | — | JSON object overriding all 14 dimension weights | Advanced: reshape the entire scoring space. E.g. `{"keywordCount":0.15,"instructionComplexity":0.12}` |
+
+> All variables above are prefixed with `MINIROUTER_` at runtime.
+> E.g. `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM=0.10`.
+
+#### Quick tuning guide
+
+| Goal | What to change |
+| --- | --- |
+| **Save more money** (more requests → SIMPLE/FAST) | Raise `BOUNDARY_SIMPLE_MEDIUM` (e.g. 0.20), lower `CONFIDENCE_THRESHOLD` (e.g. 0.45), set `AMBIGUOUS_DEFAULT_TIER=SIMPLE` |
+| **Improve quality** (more requests → STRONG) | Lower `BOUNDARY_MEDIUM_COMPLEX` (e.g. 0.20), lower `BOUNDARY_COMPLEX_REASONING` (e.g. 0.35), raise `CONFIDENCE_THRESHOLD` (e.g. 0.65) |
+| **Balanced default** | Keep defaults. Fine-tune `BOUNDARY_SIMPLE_MEDIUM` between 0.05–0.15. |
 
 ### Context optimisation (optional — off by default)
 

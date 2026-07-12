@@ -430,20 +430,43 @@ export OPENAI_MODEL="minirouter/auto"
 
 ### 路由调参（可选，内置合理默认值）
 
-| 变量                                   | 默认值   | 说明                                   |
-| -------------------------------------- | :------: | -------------------------------------- |
-| `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM`    | `0.10`   | SIMPLE / MEDIUM 分界线                  |
-| `MINIROUTER_BOUNDARY_MEDIUM_COMPLEX`   | `0.3`    | MEDIUM / COMPLEX 分界线                 |
-| `MINIROUTER_BOUNDARY_COMPLEX_REASONING`| `0.5`    | COMPLEX / REASONING 分界线              |
-| `MINIROUTER_TOKEN_COUNT_SIMPLE`        | `50`     | token 数 ≤ 此值 → 向 SIMPLE 倾斜        |
-| `MINIROUTER_TOKEN_COUNT_COMPLEX`       | `500`    | token 数 ≥ 此值 → 向 COMPLEX 倾斜       |
-| `MINIROUTER_CONFIDENCE_THRESHOLD`      | `0.55`   | 低于此置信度 → 回退到模糊层级           |
-| `MINIROUTER_CONFIDENCE_STEEPNESS`      | `12`     | 置信度 sigmoid 的陡峭度                 |
-| `MINIROUTER_AMBIGUOUS_DEFAULT_TIER`    | `MEDIUM` | 低置信度时的回退层级                    |
-| `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER`| `SIMPLE` | JSON/tool_choice 请求的最低层级         |
-| `MINIROUTER_AGENTIC_SCORE_THRESHOLD`   | `0.5`    | agentic 维度阈值，触发 agentic 路由     |
-| `MINIROUTER_AGENTIC_MODE`              | —        | 强制 agentic 模式：`true` / `false`（不设置则自动检测） |
-| `MINIROUTER_DIMENSION_WEIGHTS`         | —        | JSON 对象，覆盖 14 个维度权重          |
+这些参数控制**每个难度层级有多少请求**，直接影响省钱与质量的平衡：
+
+```
+层级映射:  SIMPLE → FAST 槽位    MEDIUM → BALANCED 槽位    COMPLEX/REASONING → STRONG 槽位
+```
+
+**影响 SIMPLE / MEDIUM / COMPLEX / REASONING 比例的关键参数：**
+
+- **三个 tier 分界线**（`BOUNDARY_*`）— 最直接的调控手段。左右移动改变各层级的请求比例。
+- **置信度阈值**（`CONFIDENCE_THRESHOLD`）— 越高越多请求落到模糊回退层级（安全但更贵）。
+- **Token 数阈值**（`TOKEN_COUNT_*`）— 长提示词向上推一级，短提示词向下推。
+
+| 变量 | 默认值 | 控制什么 | 调大之后的效果 |
+| --- | :---: | --- | --- |
+| `BOUNDARY_SIMPLE_MEDIUM` | `0.10` | SIMPLE 与 MEDIUM 的分界线 | **↑ 更多请求 → SIMPLE（更便宜）**。更少任务被升级到 MEDIUM。 |
+| `BOUNDARY_MEDIUM_COMPLEX` | `0.3` | MEDIUM 与 COMPLEX 的分界线 | **↑ 更多请求 → MEDIUM（均衡）**。更少任务到达昂贵的 COMPLEX。 |
+| `BOUNDARY_COMPLEX_REASONING` | `0.5` | COMPLEX 与 REASONING 的分界线 | **↑ 更多请求 → COMPLEX（强模型）**。只有最难的任务才到 REASONING。 |
+| `TOKEN_COUNT_SIMPLE` | `50` | Token 数 ≤ 此值 → 倾向 SIMPLE | 调大 → 更多短提示词走 SIMPLE。 |
+| `TOKEN_COUNT_COMPLEX` | `500` | Token 数 ≥ 此值 → 倾向 COMPLEX | 调大 → 需要更长提示词才升级到 COMPLEX。 |
+| `CONFIDENCE_THRESHOLD` | `0.55` | 低于此置信度 → 回退到模糊层级 | **↑ 更多请求走模糊回退**（安全但更贵）。 |
+| `CONFIDENCE_STEEPNESS` | `12` | 置信度 sigmoid 的陡峭度 | 越高越接近开关模式。很少需要调整。 |
+| `AMBIGUOUS_DEFAULT_TIER` | `MEDIUM` | 低置信度时的回退层级 | `SIMPLE` = 最大省钱；`COMPLEX` = 安全优先。 |
+| `STRUCTURED_OUTPUT_MIN_TIER` | `SIMPLE` | JSON 模式 / tool_choice 的最低层级 | `SIMPLE` = 最便宜；`MEDIUM`/`COMPLEX` = 质量更好但更贵。 |
+| `AGENTIC_SCORE_THRESHOLD` | `0.5` | 触发 agentic 路由的 agentic 维度分数 | 越高越难触发 agentic 模式（更多请求走标准路由）。 |
+| `AGENTIC_MODE` | — | 强制 agentic 模式：`true` / `false`（不设置则自动检测） | `true` = 始终用 agentic 层级；`false` = 完全禁用。 |
+| `DIMENSION_WEIGHTS` | — | JSON 对象，覆盖 14 个维度权重 | 高级：重塑整个评分空间。例如 `{"keywordCount":0.15,"instructionComplexity":0.12}` |
+
+> 以上变量运行时均需加 `MINIROUTER_` 前缀。
+> 例如 `MINIROUTER_BOUNDARY_SIMPLE_MEDIUM=0.10`。
+
+#### 快速调参指南
+
+| 目标 | 怎么调 |
+| --- | --- |
+| **更省钱**（更多请求 → SIMPLE/FAST） | 调大 `BOUNDARY_SIMPLE_MEDIUM`（如 0.20），调小 `CONFIDENCE_THRESHOLD`（如 0.45），设 `AMBIGUOUS_DEFAULT_TIER=SIMPLE` |
+| **更高质量**（更多请求 → STRONG） | 调小 `BOUNDARY_MEDIUM_COMPLEX`（如 0.20），调小 `BOUNDARY_COMPLEX_REASONING`（如 0.35），调大 `CONFIDENCE_THRESHOLD`（如 0.65） |
+| **均衡默认** | 保持默认值。微调 `BOUNDARY_SIMPLE_MEDIUM` 在 0.05–0.15 之间。 |
 
 ### 上下文优化（可选，默认关闭）
 
