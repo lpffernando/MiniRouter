@@ -1,5 +1,9 @@
+# DEPRECATED: This systemd service is for bare-metal / non-Docker deployments.
+# MiniRouter now uses Docker as the primary deployment method.
+# See docker-compose.yml for the recommended setup.
+
 [Unit]
-Description=MiniRouter — Smart LLM Routing Gateway
+Description=MiniRouter — Smart LLM Routing Gateway (deprecated: use Docker)
 After=network-online.target
 Wants=network-online.target
 

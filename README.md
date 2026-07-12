@@ -46,6 +46,70 @@ the slot and forwards the request. That's it.
 Run `POST /debug/route` to inspect a classification without calling upstream —
 every route is explainable.
 
+## Use cases
+
+MiniRouter is designed for scenarios where you have multiple models available
+and want to put each request on the right one without hard-coding model names
+in your application.
+
+### OpenCode Go / subscription plans
+
+OpenCode Go and similar subscription services offer a pool of models (fast,
+balanced, strong, vision) under one monthly plan. MiniRouter turns that single
+subscription into an intelligent gateway:
+
+```
+Slot configuration:
+  FAST     → deepseek-v4-flash  (cheap, fast)
+  BALANCED → deepseek-v4-pro    (workhorse)
+  STRONG   → glm-5.2            (powerful reasoning)
+  VISION   → glm-5.2-vision     (multimodal)
+```
+
+Your application calls `minirouter/auto` — MiniRouter picks the cheapest slot
+that can handle the task:
+
+- "Fix a typo" → FAST (cheap)
+- "Write a CRUD API" → BALANCED (workhorse)
+- "Debug a distributed system deadlock" → STRONG (powerful)
+
+**Result:** You get more value from your subscription without any app changes.
+
+### Multi-provider aggregation (e.g. 胜算云 / aggregators)
+
+Aggregation platforms give you a single API key that can reach dozens of
+models. MiniRouter lets you assign different models to each slot:
+
+```
+FAST     → deepseek-v4-flash  @ $0.15/M
+BALANCED → qwen3-120b         @ $0.50/M
+STRONG   → claude-sonnet-4    @ $3.00/M
+VISION   → gpt-4o            @ $2.50/M
+```
+
+All from one API key. The router sends trivial queries to the cheapest model
+and only upgrades when the task genuinely needs it.
+
+### Token plan combinations
+
+If you have separate token plans (e.g. a cheap plan for fast models and a
+premium plan for strong models), configure each slot with its own plan:
+
+```
+# Cheap plan (pre-paid 10M tokens)
+MINIROUTER_FAST_BASE_URL=https://fast-tier.example.com/v1
+MINIROUTER_FAST_API_KEY=plan_abc123
+MINIROUTER_FAST_MODEL=deepseek-v4-flash
+
+# Premium plan (pre-paid 1M tokens)
+MINIROUTER_STRONG_BASE_URL=https://premium-tier.example.com/v1
+MINIROUTER_STRONG_API_KEY=plan_xyz789
+MINIROUTER_STRONG_MODEL=claude-opus-4
+```
+
+MiniRouter automatically routes each request to the right plan. Waste fewer
+premium tokens on trivial queries.
+
 ## Quick start (local)
 
 ```bash
@@ -87,7 +151,8 @@ cp .env.example .env
 # Edit .env: replace BASE_URL, API_KEY, and MODEL for each slot
 
 # 2. (Optional) Tune routing parameters
-#    Edit .env.tuning — defaults are already sensible.
+#    Edit docker-compose.yml → environment: section, then `docker compose up -d`
+#    (no rebuild needed, just restart).
 
 # 3. Build and start
 docker compose up -d
@@ -144,11 +209,10 @@ docker run -d \
 | --- | --- | :---: |
 | `.env` | Secrets: API keys, base URLs, solo mode | No (gitignored) |
 | `.env.example` | Template with all available vars | Yes |
-| `.env.tuning` | Routing parameter defaults (no secrets) | Yes |
 
-`.env.tuning` is baked into the Docker image as `/app/.env.tuning`. It
-provides sensible routing defaults. Runtime `-e` vars and `.env` both
-take precedence over `.env.tuning`.
+Routing defaults are pinned in `docker-compose.yml` under `environment:`.
+Change a value there and run `docker compose up -d` — no image rebuild needed.
+Secrets stay in the gitignored `.env` and are loaded via `env_file:`.
 
 ### Production bootstrap (first admin)
 
@@ -271,8 +335,9 @@ curl -s http://localhost:8402/v1/chat/completions \
   }'
 ```
 
-Requests with structured output are forced to at least the `MEDIUM` tier to
-avoid routing JSON generation to the weakest model.
+Requests with structured output are forced to at least the `SIMPLE` tier to
+avoid routing JSON generation to the weakest model. You can increase this
+with `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER` if needed.
 
 ### Debug a route (no upstream call)
 

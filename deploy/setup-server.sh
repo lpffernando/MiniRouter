@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# DEPRECATED: This script sets up systemd + direct Node.js deployment.
+# MiniRouter now uses Docker as the primary deployment method.
+# See docker-compose.yml and deploy/deploy.sh for the Docker workflow.
+#
 # ============================================================
-# MiniRouter — server setup script
-# Tested on Ubuntu 22.04 / 24.04.
 # Usage: chmod +x setup-server.sh && sudo ./setup-server.sh
 #
 # Environment variables you can override before running:

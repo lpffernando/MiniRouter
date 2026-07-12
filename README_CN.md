@@ -41,6 +41,63 @@ MiniRouter 是一个自托管的 LLM 智能调度网关。它不是简单转发 
 
 `POST /debug/route` 可以在不调用上游的情况下查看路由决策结果——每次路由都能解释。
 
+## 使用场景
+
+MiniRouter 适合那些有多个模型可用、又不想在应用里写死模型名称的场景。
+
+### OpenCode Go / 订阅套餐
+
+OpenCode Go 这类订阅服务提供一群模型（快、均衡、强、视觉），一个套餐全包。
+MiniRouter 可以把一个订阅变成智能调度网关：
+
+```
+槽位配置：
+  FAST     → deepseek-v4-flash  （便宜、快速）
+  BALANCED → deepseek-v4-pro    （主力模型）
+  STRONG   → glm-5.2            （强推理）
+  VISION   → glm-5.2-vision     （多模态）
+```
+
+你的应用只调 `minirouter/auto`，MiniRouter 自动选最便宜的能胜任的槽位：
+
+- "改个错别字" → FAST（便宜）
+- "写一个 CRUD API" → BALANCED（主力）
+- "排查分布式系统死锁" → STRONG（强力）
+
+**效果：** 订阅价值最大化，应用代码零改动。
+
+### 聚合平台（如胜算云）
+
+聚合平台一个 API Key 可以访问几十个模型。MiniRouter 让你把不同模型分配到不同槽位：
+
+```
+FAST     → deepseek-v4-flash  @ ¥0.5/M
+BALANCED → qwen3-120b         @ ¥1.5/M
+STRONG   → claude-sonnet-4    @ ¥8/M
+VISION   → gpt-4o            @ ¥6/M
+```
+
+同一个 Key。简单查询走最便宜的模型，复杂任务才升级——不会浪费。
+
+### Token 套餐组合
+
+如果你有多个 Token 套餐（比如快模型一个便宜套餐、强模型一个贵套餐），
+可以给每个槽位配不同的套餐：
+
+```
+# 便宜套餐（预充 1000 万 Token）
+MINIROUTER_FAST_BASE_URL=https://fast-tier.example.com/v1
+MINIROUTER_FAST_API_KEY=plan_abc123
+MINIROUTER_FAST_MODEL=deepseek-v4-flash
+
+# 贵价套餐（预充 100 万 Token）
+MINIROUTER_STRONG_BASE_URL=https://premium-tier.example.com/v1
+MINIROUTER_STRONG_API_KEY=plan_xyz789
+MINIROUTER_STRONG_MODEL=claude-opus-4
+```
+
+MiniRouter 自动把请求路由到对应的套餐。贵价套餐留给真正需要它的任务。
+
 ## 快速开始（本地）
 
 ```bash
@@ -81,7 +138,8 @@ cp .env.example .env
 # 编辑 .env：替换每个槽位的 BASE_URL、API_KEY、MODEL
 
 # 2.（可选）调整路由参数
-#    编辑 .env.tuning — 默认值已经合理。
+#    编辑 docker-compose.yml → environment: 区域，然后 `docker compose up -d`
+#    （无需重新构建，重启即可生效）。
 
 # 3. 构建并启动
 docker compose up -d
@@ -138,10 +196,10 @@ docker run -d \
 | --- | --- | :---: |
 | `.env` | 密钥：API key、base URL、solo 模式 | 否（gitignored） |
 | `.env.example` | 所有可用变量的模板 | 是 |
-| `.env.tuning` | 路由参数默认值（无密钥） | 是 |
 
-`.env.tuning` 会被打包进 Docker 镜像 `/app/.env.tuning`，提供合理的路由默认值。
-运行时 `-e` 变量和 `.env` 的优先级均高于 `.env.tuning`。
+路由参数默认值固定在 `docker-compose.yml` 的 `environment:` 区域。
+修改后运行 `docker compose up -d` 即可——无需重新构建镜像。
+密钥放在 gitignored 的 `.env` 中，通过 `env_file:` 加载。
 
 ### 生产环境首次启动
 
@@ -261,7 +319,8 @@ curl -s http://localhost:8402/v1/chat/completions \
   }'
 ```
 
-结构化输出请求会被强制至少路由到 MEDIUM 层级，避免 JSON 生成落到最弱模型。
+结构化输出请求会被强制至少路由到 SIMPLE 层级，避免 JSON 生成落到最弱模型。
+如有需要，可通过 `MINIROUTER_STRUCTURED_OUTPUT_MIN_TIER` 调高。
 
 ### 调试路由（不调用上游）
 

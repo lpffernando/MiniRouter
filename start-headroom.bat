@@ -1,3 +1,5 @@
+REM DEPRECATED: Windows batch file for local development only.
+REM MiniRouter production deployment uses Docker. See docker-compose.yml.
 @echo off
 cd /d "%~dp0"
 

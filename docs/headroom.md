@@ -26,7 +26,28 @@ User request
 
 ## Starting Headroom
 
-The repository includes `start-headroom.bat` for running the official Headroom proxy.
+### Docker (recommended)
+
+Add a headroom service to your `docker-compose.yml`:
+
+```yaml
+services:
+  minirouter:
+    # ... existing config
+
+  headroom:
+    image: headroomai/headroom:latest
+    container_name: headroom
+    ports:
+      - "8787:8787"
+    command: ["proxy", "--port", "8787", "--mode", "cache", "--no-ccr-inject-tool", "--lossless"]
+```
+
+Then set `MINIROUTER_HEADROOM_URL=http://headroom:8787` in your `docker-compose.yml`.
+
+### Windows (local development only)
+
+The repository includes Windows batch files for local development:
 
 ```bat
 start-headroom.bat
@@ -59,6 +80,9 @@ Headroom is managed alongside MiniRouter via npm scripts:
 
 The `restart.bat` script kills both services (ports 8787 + 8402), starts Headroom
 in a new terminal window, then starts MiniRouter in the foreground.
+
+> **Production note:** On Linux / Docker, manage Headroom as a separate
+> container or systemd service. The `.bat` files are Windows-only.
 
 ## Environment
 
