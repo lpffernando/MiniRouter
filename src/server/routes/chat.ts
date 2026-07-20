@@ -21,6 +21,7 @@ import type { ModelSlot } from "../../providers/types.js";
 import { executeOpenAICompatibleChat } from "../../providers/openai-compatible.js";
 import { optimizeWithHeadroom } from "../../context/headroom.js";
 import { extractPromptDigest, extractLastUserText } from "../../routing/features/prompt-digest.js";
+import { extractSessionId } from "../session-id.js";
 import { createSseUsageTap } from "../sse-usage-tap.js";
 import { estimateUsdCostForModel } from "../../router/cost.js";
 import { isSpendLimitExceeded } from "../../db/queries/spend.js";
@@ -357,6 +358,7 @@ export async function chatCompletions(c: Context) {
   trace("features_start");
   const features = extractRoutingFeatures(request);
   trace("features_done");
+  const sessionId = extractSessionId(c, request.messages, auth.userId);
   let upstream: Response;
   let optimization: OptimizationLog = {};
   try {
@@ -368,6 +370,7 @@ export async function chatCompletions(c: Context) {
         vision: features.requirements.vision,
       },
       executor: (slot) => executeConfiguredSlot(body, slot),
+      sessionId,
     });
     trace(`execute_slot_done:${result.upstream.status}`);
     upstream = result.upstream;

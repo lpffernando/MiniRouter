@@ -17,6 +17,8 @@ export type ProviderChannel = {
   contextWindowTokens?: number;
 };
 
+export type ChannelSelectionStrategy = "round-robin" | "weighted-primary";
+
 export type ChannelSelectionInput = {
   slot: ModelSlotName;
   requirements: {
@@ -28,6 +30,10 @@ export type ChannelSelectionInput = {
   /** Channel ids already attempted in the current request — excluded so a
    *  fallback loop tries a *different* channel instead of retrying the same. */
   excludeIds?: string[];
+  /** Selection strategy. Default: weighted-primary (highest weight first). */
+  strategy?: ChannelSelectionStrategy;
+  /** If provided and still eligible, force-select this provider instance. */
+  pinnedProviderId?: string;
 };
 
 export type ChannelSelection = {
@@ -41,7 +47,7 @@ function isCoolingDown(channel: ProviderChannel, now: Date): boolean {
   return Number.isFinite(cooldown.getTime()) && cooldown > now;
 }
 
-function normalizedWeight(channel: ProviderChannel): number {
+export function normalizedWeight(channel: ProviderChannel): number {
   return Number.isFinite(channel.weight) && channel.weight > 0 ? Math.floor(channel.weight) : 1;
 }
 
@@ -62,6 +68,29 @@ export function selectProviderChannel(
 
   if (eligible.length === 0) return undefined;
 
+  // Session pinning takes precedence: if the pinned provider is healthy,
+  // use it so a multi-turn conversation stays on the same upstream.
+  if (input.pinnedProviderId) {
+    const pinned = eligible.find((channel) => channel.id === input.pinnedProviderId);
+    if (pinned) {
+      return { channel: pinned, nextCursor: input.cursor };
+    }
+  }
+
+  const strategy = input.strategy ?? "weighted-primary";
+
+  if (strategy === "weighted-primary") {
+    // Highest weight first; stable tie-breaker by id so the same primary
+    // is consistently chosen across requests.
+    const sorted = [...eligible].sort((a, b) => {
+      const diff = normalizedWeight(b) - normalizedWeight(a);
+      if (diff !== 0) return diff;
+      return a.id.localeCompare(b.id);
+    });
+    return { channel: sorted[0]!, nextCursor: input.cursor };
+  }
+
+  // Legacy round-robin / weighted distribution.
   const weighted: ProviderChannel[] = [];
   for (const channel of eligible) {
     for (let i = 0; i < normalizedWeight(channel); i++) {
